@@ -1,6 +1,7 @@
-# 🖥️🚀 Week 1: Shell Scripts and VM Setup
+# 🔐 Demo Guide: Shell Scripts and VM Setup
 
-📝 This guide covers the shell scripts and steps required to provision an Azure Virtual Machine (VM) and deploy the initial web server for the project.
+## 🎯 Objective
+This guide covers the shell scripts and steps required to provision an Azure Virtual Machine (VM) and deploy the initial web server for the project.
 
 ---
 
