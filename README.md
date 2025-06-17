@@ -1,68 +1,42 @@
 # acc-cloud-wil-demo
-This guide provides a week-by-week overview of the `Cloud Computing` IATD course, focusing on practical Azure cloud skills:
-
-- **Week 1:** Deploying and managing Azure Virtual Machines (VMs).
-- **Week 2:** Working with Azure Storage solutions.
-- **Week 3:** Exploring Azure Networking concepts and resources.
-- **Week 4:** Building decoupled applications using Azure services.
-- **Week 5:** Deploying and managing applications with Azure Container Apps.
-- **Week 6:** Implementing serverless computing with Azure Functions and related services.
+This guide provides a week-by-week overview of the `Cloud Computing` IATD course, focusing on Azure cloud skills. Each week includes hands-on scripts, instructions, and best practices for working with Azure.
   
 ## Course Overview
 
-Each week includes hands-on scripts, instructions, and best practices for working with Azure.
+
 
 <details>
-  <summary>Week 1: Shell Scripts and VM Setup</summary>
+  <summary>Week 1: Azure Virtual Machines Overview</summary>
 
-  ### Shell Scripts Overview
+  In Week 1, you will learn how to deploy and manage Azure Virtual Machines (VMs). This includes understanding the basics of Azure compute resources, creating and configuring VMs, setting up networking and security, and deploying a simple web server to host your application.
 
-  - **setup.sh**: Sets up environment variables required for resource creation.
-  - **vmcreate.sh**: Provisions Azure resources (resource group, network, VM, etc.) and deploys Apache on the VM.
-  - **cleanup.sh**: Deletes all Azure resources created for this project.
+  **Key topics covered:**
+  - Introduction to Azure Virtual Machines
+  - Resource groups and region selection
+  - Virtual network and subnet configuration
+  - Network security groups (NSGs) and firewall rules
+  - Creating and connecting to a VM using SSH
+  - Installing and configuring a web server on the VM
+  - Uploading project files to your VM
 
-  ### How to Run the Scripts
-
-  1. **Set up environment variables:**
-     ```bash
-     ./setup.sh
-     ```
-
-  2. **Create the VM and related resources:**
-     ```bash
-     ./vmcreate.sh
-     ```
-
-  3. **Clean up resources when finished:**
-     ```bash
-     ./cleanup.sh
-     ```
-
-  ### SSH into the Virtual Machine
-
-  After running `vmcreate.sh`, get your VM's public IP from the script output. Then connect using:
-
-  ```bash
-  ssh <VM_USERNAME>@<VM_PUBLIC_IP>
-  ```
-
-  Replace `<VM_USERNAME>` and `<VM_PUBLIC_IP>` with your actual VM username and public IP.
-
-  ### Upload the MomPopCafe Project Using SCP
-
-  To upload the entire `MomPopCafe` folder to your VM's home directory:
-
-  ```bash
-  scp -r MomPopCafe <VM_USERNAME>@<VM_PUBLIC_IP>:~/
-  ```
-
-  Replace `<VM_USERNAME>` and `<VM_PUBLIC_IP>` with your actual VM username and public IP.
+  By the end of this week, you will have hands-on experience provisioning a VM in Azure, securing it, and deploying a basic web application.
 
 </details>
 
 <details>
-  <summary>Week 2</summary>
-  <!-- Content for Week 2 will be added here -->
+  <summary>Week 2: Securing Access to Azure Blob Storage</summary>
+
+  Azure Blob Storage is a scalable object storage solution for the cloud. In Week 2, you will learn how to securely manage access to Azure Blob Storage using role-based access control (RBAC), shared access signatures (SAS), and storage account keys. This week focuses on best practices for protecting your data and controlling who can access your storage resources.
+
+  **Key topics covered:**
+  - Understanding Azure Storage accounts and Blob containers
+  - Assigning RBAC roles for granular access control
+  - Creating and using Shared Access Signatures (SAS) for delegated access
+  - Managing storage account keys securely
+  - Using Azure CLI and scripts to automate storage account management
+
+  By the end of this week, you will have the skills to secure your Azure Blob Storage data effectively and manage access permissions.
+
 </details>
 
 <details>
