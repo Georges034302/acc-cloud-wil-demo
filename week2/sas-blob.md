@@ -1,93 +1,148 @@
 # 🔐 Demo Guide: Shared Access Signature (SAS) for Azure Blob Storage
 
-## 🎯 Objective
-Learn how to create a Shared Access Signature (SAS) token to grant time-limited, permission-based access to Azure Blob Storage without assigning roles.
+## 🌟 Objective
+
+Learn how to create and test a time-limited Shared Access Signature (SAS) token to grant fine-grained access to Blob Storage without assigning roles.
 
 ---
 
 ## 🧭 Prerequisites
+
 - Azure Portal access
-- A Storage Account with an existing **container** (e.g. `myfiles`)
 - Azure CLI installed
+- One storage account and a blob container (e.g., `myfiles`)
+- One uploaded blob (e.g., `example.txt`)
 
 ---
 
-## 👣 Step-by-Step Instructions (Azure Portal + Azure CLI)
+## 👣 Step-by-Step Instructions (Portal + CLI)
 
-### 1️⃣ Navigate to Your Storage Account
+### 0️⃣ Setup: Create Storage Account, Container & Upload File
+
+👤 **Performed by: Admin User**
 
 🔸 **Portal:**
+
 1. Go to [https://portal.azure.com](https://portal.azure.com)
-2. Open your **Storage Account** (e.g. `rbacdemo123`)
-
-🔸 **CLI:** *(Already created storage account is required; see CLI steps in Demo 1)*
-
----
-
-### 2️⃣ Open Shared Access Signature Settings
-
-🔸 **Portal:**
-1. In the left-hand menu, scroll down and click **Shared access signature**
-2. Configure the following options:
-   - **Allowed services**: ✔ Blob
-   - **Allowed resource types**: ✔ Service, Container, Object
-   - **Allowed permissions**: ✔ Read, Write, Create
-   - **Start and expiry date/time**: Set a valid time window (e.g. now + 1 hour)
-   - (Optional) Restrict to specific IPs or protocols (HTTPS recommended)
-3. Click **Generate SAS and connection string**
-4. Copy the **Blob service SAS URL** and **SAS token** ✂️
+2. Search for **Storage accounts** → Click **+ Create**
+3. Fill in:
+   - Resource Group: `sastokendemo-rg`
+   - Storage Account: `sasdemo<unique>`
+   - Region: `Australia East`
+   - SKU: Standard\_LRS
+4. Click **Review + create** → **Create**
+5. After deployment, go to **Containers** → **+ Container**
+6. Name: `myfiles`, Access: **Private** → Click **Create**
+7. Open the container → Click **Upload** → Choose a file (e.g. `example.txt`) → Click **Upload**
 
 🔸 **CLI:**
+
+```bash
+az group create --name sastokendemo-rg --location australiaeast
+
+az storage account create \
+  --name sasdemo123 \
+  --resource-group sastokendemo-rg \
+  --location australiaeast \
+  --sku Standard_LRS
+
+az storage container create \
+  --account-name sasdemo123 \
+  --name myfiles \
+  --auth-mode login \
+  --public-access off
+
+az storage blob upload \
+  --account-name sasdemo123 \
+  --container-name myfiles \
+  --name example.txt \
+  --file ./example.txt \
+  --auth-mode login \
+  --overwrite true
+```
+
+---
+
+### 1️⃣ Generate SAS Token
+
+👤 **Performed by: Admin User**
+
+🔸 **Portal:**
+
+1. Go to the **Storage Account** → Scroll down to **Shared access signature**
+2. Configure:
+   - ✔ **Allowed services**: Blob
+   - ✔ **Resource types**: Service, Container, Object
+   - ✔ **Permissions**: Read, Write, Create
+   - Set **Start time**: now
+   - Set **Expiry time**: e.g., 1 hour from now
+   - ✅ Enable **HTTPS only**
+3. Click **Generate SAS and connection string**
+4. Copy:
+   - **Blob service SAS token**
+   - **Blob service SAS URL**
+
+🔸 **CLI:**
+
 ```bash
 az storage account generate-sas \
   --permissions rwd \
-  --account-name <storage_account> \
+  --account-name sasdemo123 \
   --services b \
   --resource-types sco \
-  --expiry <YYYY-MM-DD>T<HH:MMZ> \
+  --expiry "$(date -u -d '1 hour' '+%Y-%m-%dT%H:%MZ')" \
   --https-only \
   --output tsv
 ```
-Use the output token with the URL:
-```
-https://<storage_account>.blob.core.windows.net/myfiles/<filename>?<sas_token>
+
+Then append the SAS token to the blob URL:
+
+```bash
+# URL format:
+https://sasdemo123.blob.core.windows.net/myfiles/example.txt?<SAS_TOKEN>
 ```
 
 ---
 
-### 3️⃣ Test SAS URL in Browser (Read-Only)
+### 2️⃣ Test Access via SAS Link
 
-🔸 **Portal:**
-1. Go to **Containers** → `myfiles`
-2. Upload a file (e.g. `example.txt`) if not already uploaded
-3. Click the file → Click **Properties**
-4. Copy the **URL** (without SAS)
-5. Append the **SAS token** to the URL:
-   - `https://<account>.blob.core.windows.net/myfiles/example.txt?<SAS_token>`
-6. Paste the full URL in a browser tab → press **Enter**
-7. ✅ The file should open/download
+👤 **Performed by: Any user (e.g., Student)**
 
-🔸 **CLI:** *(Browser-based test; no CLI step required)*
+🔸 **Browser:**
+
+1. Paste the full URL into a browser tab
+2. ✅ If the token is valid, the file should display or download
 
 ---
 
-### 4️⃣ Use SAS Token in Azure Storage Explorer (Optional)
+### 3️⃣ (Optional) Use SAS in Storage Explorer
 
-🔸 **Portal:**
-1. Open **Azure Storage Explorer**
-2. Click **Add Account** → Choose **Use a shared access signature (SAS) URI**
-3. Paste the full SAS URL
-4. Access the container and test uploading/downloading files
+👤 **Performed by: Any user (e.g., Student)**
 
-🔸 **CLI:** *(No CLI equivalent; Storage Explorer is GUI-based)*
+🔸 **Azure Storage Explorer:**
+
+1. Open Storage Explorer → **Add Account**
+2. Select **Use a shared access signature (SAS) URI**
+3. Paste the full URL copied earlier
+4. Access the container and verify you can see and download the blob
 
 ---
 
 ## 🚨 Notes
-- SAS tokens are powerful – never share them insecurely
-- You can revoke SAS access by regenerating account keys or using stored access policies
+
+- You can **revoke SAS tokens** by regenerating the account keys or configuring stored access policies
+- SAS tokens offer granular access for apps and users **without needing to assign IAM roles**
+- Be cautious: treat tokens like passwords
 
 ---
 
-✅ **Demo complete – students now understand SAS tokens and how to use them securely!**
+## 🧼 Clean Up (Admin User)
+
+```bash
+az group delete --name sastokendemo-rg --yes --no-wait
+```
+
+---
+
+✅ **Demo complete – students have experienced temporary, URL-based access to Blob Storage using SAS tokens!**
 
