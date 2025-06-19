@@ -47,24 +47,30 @@ Learn how to create and test a time-limited Shared Access Signature (SAS) token 
 az group create --name sastokendemo-rg --location australiaeast
 
 az storage account create \
-  --name sasdemo123 \
+  --name sasdemo123456789 \
   --resource-group sastokendemo-rg \
   --location australiaeast \
   --sku Standard_LRS
 
 az storage container create \
-  --account-name sasdemo123 \
+  --account-name sasdemo123456789 \
   --name myfiles \
   --auth-mode login \
   --public-access off
 
+ACCOUNT_KEY=$(az storage account keys list \
+  --account-name sasdemo123456789 \
+  --resource-group sastokendemo-rg \
+  --query '[0].value' \
+  --output tsv)
+
 az storage blob upload \
-  --account-name sasdemo123 \
+  --account-name sasdemo123456789 \
   --container-name myfiles \
-  --name example.txt \
-  --file ./example.txt \
-  --auth-mode login \
-  --overwrite true
+  --name sas-blob.md \
+  --file sas-blob.md \
+  --account-key "$ACCOUNT_KEY" \
+  --overwrite
 ```
 
 ---

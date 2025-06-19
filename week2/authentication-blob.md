@@ -40,22 +40,31 @@ Use Azure Active Directory (Azure AD) to grant secure, token-based access to Blo
 🔸 **CLI (optional):**
 
 ```bash
+# Define strong password
+strong_password='Strong!Pas.sword123'
+ 
+# Get current subscription ID
+subscription_id=$(az account show --query id -o tsv)
+ 
+# Create Admin User
 az ad user create \
   --display-name "Admin User" \
-  --user-principal-name adminuser@<your_domain> \
-  --password <StrongPassword123> \
-  --force-change-password-next-login true
-
+  --user-principal-name "adminuser@$my_domain" \
+  --password "$strong_password" \
+  --force-change-password-next-sign-in true
+ 
+# Create Student User
 az ad user create \
   --display-name "Student User" \
-  --user-principal-name studentuser@<your_domain> \
-  --password <StrongPassword123> \
-  --force-change-password-next-login true
-
+  --user-principal-name "studentuser@$my_domain" \
+  --password "$strong_password" \
+  --force-change-password-next-sign-in true
+ 
+# Assign "Contributor" role to Admin User
 az role assignment create \
-  --assignee adminuser@<your_domain> \
+  --assignee "adminuser@$my_domain" \
   --role "Contributor" \
-  --scope /subscriptions/<subscription_id>
+  --scope "/subscriptions/$subscription_id"
 ```
 
 🔐 **Login Tips:**
