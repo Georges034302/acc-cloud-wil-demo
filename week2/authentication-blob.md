@@ -9,25 +9,46 @@ Use Azure Active Directory (Azure AD) to grant secure, token-based access to Blo
 ## 🧭 Prerequisites
 
 - Azure Portal access
-- One Storage Account with a blob container (e.g. `myfiles`)
-- An Azure AD user to assign access (student)
 - Azure CLI installed
+- An Azure AD user (student) with no storage roles
+- A storage account and resource group (created in this demo)
 
 ---
 
 ## 👣 Step-by-Step Instructions (Azure Portal + Azure CLI)
 
-### 1️⃣ Confirm Azure AD Integration is Enabled
+### 1️⃣ Create Storage Account and Enable Azure AD Authentication
 
 🔸 **Portal:**
 
 1. Go to [https://portal.azure.com](https://portal.azure.com)
-2. Open your **Storage Account**
-3. In the left menu, select **Configuration**
-4. Ensure **"Azure Active Directory"** is selected under **"Default to Azure AD authorization in the Azure portal"**
-5. Click **Save** if changes were made
+2. Navigate to **Storage accounts** → **+ Create**
+3. Fill out:
+   - Subscription: your active subscription
+   - Resource group: `adblobdemo-rg` (create new)
+   - Storage account name: `adblobdemo<random>` (must be unique)
+   - Region: `Australia East`
+   - Performance: Standard
+   - Redundancy: LRS
+4. Click **Review + create** → **Create**
+5. After deployment completes, open the storage account
+6. Select **Configuration** from the left menu
+7. Under **Default to Azure AD authorization in the Azure portal**, set to `Enabled`
+8. Click **Save**
 
-🔸 **CLI:** *(No direct CLI equivalent; this setting is changed only through the portal)*
+🔸 **CLI:**
+
+```bash
+az group create --name adblobdemo-rg --location australiaeast
+
+az storage account create \
+  --name adblobdemo123 \
+  --resource-group adblobdemo-rg \
+  --location australiaeast \
+  --sku Standard_LRS
+```
+
+> ⚠️ Note: Azure AD auth setting must still be enabled in Portal manually.
 
 ---
 
@@ -35,17 +56,17 @@ Use Azure Active Directory (Azure AD) to grant secure, token-based access to Blo
 
 🔸 **Portal:**
 
-1. In your storage account, click **Containers**
+1. Go to your Storage Account → **Containers**
 2. Click **+ Container**
-   - **Name**: `myfiles`
-   - **Public access level**: Private
+   - Name: `myfiles`
+   - Access level: `Private`
    - Click **Create**
 
 🔸 **CLI:**
 
 ```bash
 az storage container create \
-  --account-name <storage_account> \
+  --account-name adblobdemo123 \
   --name myfiles \
   --auth-mode login \
   --public-access off
@@ -53,61 +74,63 @@ az storage container create \
 
 ---
 
-### 3️⃣ Assign Azure AD Role to User
+### 3️⃣ Assign Azure AD Role to Student User
 
 🔸 **Portal:**
 
-1. In the Storage Account, go to **Access control (IAM)**
+1. Open the **Storage Account** → **Access control (IAM)**
 2. Click **+ Add** → **Add role assignment**
-3. Role: **Storage Blob Data Reader** or **Contributor** (for read or write access)
-4. Click **Next**
-5. Click **+ Select members** → Search and select the **student user**
-6. Click **Select** → **Next** → **Review + assign** twice
+3. Role: `Storage Blob Data Reader` (read access) or `Storage Blob Data Contributor` (read/write)
+4. Click **Next** → **+ Select members**
+5. Search and select the **student user**
+6. Click **Select** → **Next** → **Review + assign**
 
 🔸 **CLI:**
 
 ```bash
 az role assignment create \
-  --assignee <user_object_id_or_email> \
+  --assignee <student_email_or_object_id> \
   --role "Storage Blob Data Reader" \
-  --scope "/subscriptions/<subscription_id>/resourceGroups/<rg_name>/providers/Microsoft.Storage/storageAccounts/<storage_account>"
+  --scope "/subscriptions/<subscription_id>/resourceGroups/adblobdemo-rg/providers/Microsoft.Storage/storageAccounts/adblobdemo123"
 ```
 
-✅ User now has token-based access!
+✅ The student now has secure Azure AD access to the blob container.
 
 ---
 
-### 4️⃣ Test Authentication
+### 4️⃣ Test Access as Student
 
 🔸 **Portal:**
 
-1. Log into the Azure Portal as the **student user**
-2. Navigate to the **Storage Account** → **Containers** → `myfiles`
-3. Click **Upload** or **Download** a file
-4. ✅ Should succeed without keys or SAS
+1. Open browser in **Incognito/Private Mode**
+2. Sign in to [https://portal.azure.com](https://portal.azure.com) as the **student user**
+3. Navigate to **Storage Account** → **Containers** → `myfiles`
+4. Click **Upload** → Select a file → **Upload**
+5. ✅ Upload should work without keys or SAS
 
 🔸 **CLI:**
 
 ```bash
-az login
+az login  # Use student user credentials
 
 az storage blob list \
-  --account-name <storage_account> \
+  --account-name adblobdemo123 \
   --container-name myfiles \
   --auth-mode login \
   --output table
 ```
 
-✅ You are now accessing the container securely via Azure AD token.
+✅ List of blobs should appear if permission is granted.
 
 ---
 
 ## 🚨 Notes
 
-- Azure AD removes the need to store account keys or SAS tokens
-- You can use **Managed Identities** or **service principals** for app access
+- Azure AD removes the need to manage storage keys or SAS tokens
+- Supports token-based access from CLI, SDKs, or managed identities
+- For app scenarios, use Managed Identity instead of user role assignment
 
 ---
 
-✅ **Demo complete – students have experienced secure, identity-based access to Blob Storage!**
+✅ **Demo complete – students have experienced secure, identity-based access to Blob Storage via Azure AD.**
 
