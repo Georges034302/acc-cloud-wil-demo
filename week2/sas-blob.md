@@ -79,7 +79,7 @@ az storage blob upload \
 2. In the left menu, click **Containers** → Select `myfiles`
 3. In the left menu (inside the container), click **Settings** → **Shared access tokens**
 4. Select the target blob file (e.g., `example.txt`) from the list
-5. Configure the following:
+5. Go to Generate SAS Tab - Configure the following:
    - ✔ Permissions: Read (or Write, Delete, etc. as needed)
    - ✔ Start and expiry date/time: e.g., start now and expiry in 1 hour
    - ✔ Allowed protocols: HTTPS only
