@@ -31,9 +31,15 @@ Learn how to create and test a time-limited Shared Access Signature (SAS) token 
    - Region: `Australia East`
    - SKU: Standard\_LRS
 4. Click **Review + create** → **Create**
-5. After deployment, go to **Containers** → **+ Container**
-6. Name: `myfiles`, Access: **Private** → Click **Create**
-7. Open the container → Click **Upload** → Choose a file (e.g. `example.txt`) → Click **Upload**
+5. After deployment, go to the Storage Account
+6. In the left menu, select **Settings** → Click **Configuration**
+7. Enable the following options:
+   - Set **Default to Azure AD authorization in the Azure portal** to `Disabled`
+   - Ensure **Allow enabling public access override** is `Enabled`
+   - Click **Save**
+8. In the left menu, click **Containers** → **+ Container**
+9. Name: `myfiles`, Access: **Private** → Click **Create**
+10. Open the container → Click **Upload** → Choose a file (e.g. `example.txt`) → Click **Upload**
 
 🔸 **CLI:**
 
@@ -69,18 +75,18 @@ az storage blob upload \
 
 🔸 **Portal:**
 
-1. Go to the **Storage Account** → Scroll down to **Shared access signature**
-2. Configure:
-   - ✔ **Allowed services**: Blob
-   - ✔ **Resource types**: Service, Container, Object
-   - ✔ **Permissions**: Read, Write, Create
-   - Set **Start time**: now
-   - Set **Expiry time**: e.g., 1 hour from now
-   - ✅ Enable **HTTPS only**
-3. Click **Generate SAS and connection string**
-4. Copy:
-   - **Blob service SAS token**
-   - **Blob service SAS URL**
+1. Go to the **Storage Account**
+2. In the left menu, click **Containers** → Select `myfiles`
+3. In the left menu (inside the container), click **Settings** → **Shared access tokens**
+4. Select the target blob file (e.g., `example.txt`) from the list
+5. Configure the following:
+   - ✔ Permissions: Read (or Write, Delete, etc. as needed)
+   - ✔ Start and expiry date/time: e.g., start now and expiry in 1 hour
+   - ✔ Allowed protocols: HTTPS only
+6. Click **Generate SAS token and URL**
+7. Copy:
+   - **Blob SAS Token**
+   - **Blob SAS URL**
 
 🔸 **CLI:**
 
@@ -110,7 +116,7 @@ https://sasdemo123.blob.core.windows.net/myfiles/example.txt?<SAS_TOKEN>
 
 🔸 **Browser:**
 
-1. Paste the full URL into a browser tab
+1. Paste the full SAS URL into a browser tab
 2. ✅ If the token is valid, the file should display or download
 
 ---
@@ -121,9 +127,9 @@ https://sasdemo123.blob.core.windows.net/myfiles/example.txt?<SAS_TOKEN>
 
 🔸 **Azure Storage Explorer:**
 
-1. Open Storage Explorer → **Add Account**
-2. Select **Use a shared access signature (SAS) URI**
-3. Paste the full URL copied earlier
+1. Open Storage Explorer → Click **Add Account**
+2. Choose **Use a shared access signature (SAS) URI**
+3. Paste the full SAS URL
 4. Access the container and verify you can see and download the blob
 
 ---
