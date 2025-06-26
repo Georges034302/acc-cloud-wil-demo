@@ -1,19 +1,18 @@
-# 🗄️ Demo Guide: Deploying and Accessing Azure SQL Database
+# 💄️ Demo Guide: Deploying and Accessing Azure SQL Database
 
 ## 🎯 Objective
 
-Provision an Azure SQL Database, configure firewall access, and connect using Azure Data Studio, SQL CLI, or MySQL Workbench.
+Provision an Azure SQL Database, configure firewall access, and connect using Azure Cloud Shell or MySQL Workbench.
 
 ---
 
-## 🧭 Prerequisites
+## 🛍️ Prerequisites
 
-- Azure Portal access
-- Azure CLI installed
-- SQL client software installed:
-  - Azure Data Studio or SQL Server Management Studio (SSMS)
-  - OR MySQL Workbench (configured for SQL Server)
-  - OR `sqlcmd` tool from Microsoft
+- Azure Portal or Cloud Shell access
+- Azure CLI installed (for local use)
+- SQL client software (optional for GUI access):
+  - MySQL Workbench with ODBC driver
+  - OR `sql` client (in Azure Cloud Shell)
 
 ---
 
@@ -35,17 +34,19 @@ Provision an Azure SQL Database, configure firewall access, and connect using Az
    - Choose **Basic** pricing tier
 4. Click **Review + create** → **Create**
 
-🔸 **CLI:**
+🔸 **CLI (Portal/Cloud Shell or local):**
 
 ```bash
 az group create --name sql-demo-rg --location australiaeast
+
+read -s -p "🔑 Enter a strong password for the SQL admin account: " SQL_PASSWORD
 
 az sql server create \
   --name studentsqlserver123 \
   --resource-group sql-demo-rg \
   --location australiaeast \
   --admin-user sqladmin \
-  --admin-password ChooseASecurePassword!
+  --admin-password "$SQL_PASSWORD"
 
 az sql db create \
   --resource-group sql-demo-rg \
@@ -72,6 +73,10 @@ az sql server firewall-rule create \
   --name allow-local-ip \
   --start-ip-address <your_public_ip> \
   --end-ip-address <your_public_ip>
+
+# For demo purposes  you can open the access to public
+#  --start-ip-address 0.0.0.0 \
+#  --end-ip-address 255.255.255.255
 ```
 
 💡 Get your public IP from: [https://whatismyipaddress.com](https://whatismyipaddress.com)
@@ -80,60 +85,97 @@ az sql server firewall-rule create \
 
 ### 3️⃣ Connect to the SQL Database
 
-🔸 **Using Azure Data Studio or SSMS:**
+#### 🐳 Option 1: GitHub Codespaces using Docker
 
-1. Open the app and click **New Connection**
-2. Fill in the fields:
-   - **Server**: `studentsqlserver123.database.windows.net`
-   - **Authentication type**: SQL Login
-   - **Login**: `sqladmin`
-   - **Password**: `ChooseASecurePassword!`
-   - **Database name**: `studentdb`
-3. Click **Connect**
-4. Run a test query:
-
-```sql
-SELECT GETDATE();
-```
-
-✅ You should see the current date/time from Azure SQL.
-
-🔸 **Using MySQL Workbench (via ODBC Setup):**
-
-1. Open MySQL Workbench → Click **+** to add a new connection
-2. Choose **ODBC (Connector/ODBC)** as the connection method *(you must configure an ODBC Data Source first)*
-3. Go to **Windows ODBC Data Sources (64-bit)** → Add a new System DSN:
-   - Driver: **ODBC Driver 18 for SQL Server**
-   - Server: `studentsqlserver123.database.windows.net`
-   - Authentication: **SQL Server Authentication**
-   - Login: `sqladmin`, Password: `ChooseASecurePassword!`
-   - Encrypt: Yes
-   - Trust Server Certificate: No (default)
-4. Save DSN and test connection
-5. Back in MySQL Workbench, use the DSN to connect
-
-🔸 **Using sqlcmd:**
-
-1. Install SQL Server Command Line Utilities (ODBC Driver + `sqlcmd`) from Microsoft docs:
-   - [https://learn.microsoft.com/sql/tools/sqlcmd-utility](https://learn.microsoft.com/sql/tools/sqlcmd-utility)
-2. Run:
+Use Docker in GitHub Codespaces to connect securely to your Azure SQL Database:
 
 ```bash
-sqlcmd -S studentsqlserver123.database.windows.net -U sqladmin -P ChooseASecurePassword! -d studentdb
+docker run -it --rm mcr.microsoft.com/mssql-tools \
+  /opt/mssql-tools/bin/sqlcmd -S studentsqlserver123.database.windows.net -U sqladmin -d studentdb
 ```
 
-3. In the `sqlcmd` prompt, enter:
+✅ This command will **prompt you for your password** interactively.
 
-```sql
-SELECT GETDATE();
-GO
+📌 Alternatively, if you want to specify the password directly (for automation only):
+
+```bash
+docker run -it --rm mcr.microsoft.com/mssql-tools \
+  /opt/mssql-tools/bin/sqlcmd -S studentsqlserver123.database.windows.net -U sqladmin -P 'YourPassword' -d studentdb
 ```
 
-✅ You will get the current timestamp from Azure SQL.
+> ⚠️ Avoid hardcoding passwords in scripts. Use secrets management in production environments.
+
+🔗 [Install sqlcmd locally (docs)](https://learn.microsoft.com/sql/tools/sqlcmd-utility)
 
 ---
 
-## 🧼 Clean Up (Optional)
+
+
+#### 🧰 Option 2: MySQL Workbench via ODBC (Windows/Mac)
+
+1. Install **ODBC Driver 18 for SQL Server** from Microsoft
+2. Open **Windows ODBC Data Sources (64-bit)** → Add a **System DSN**:
+   - Driver: **ODBC Driver 18 for SQL Server**
+   - Server: `studentsqlserver123.database.windows.net`
+   - Authentication: SQL Login → `sqladmin`
+   - Password: `ChooseASecurePassword!`
+   - Encrypt: Yes, Trust Server Certificate: No
+3. Open **MySQL Workbench** → Add a new connection using the DSN
+4. Connect to the database
+
+---
+
+### 4️⃣ Post Deployment Testing
+
+After connecting to the database, run the following queries to test:
+
+🔹 **Show current database:**
+
+```sql
+SELECT DB_NAME();
+GO
+```
+
+🔹 **Create a sample table:**
+
+```sql
+CREATE TABLE students (
+  id INT PRIMARY KEY,
+  name NVARCHAR(100),
+  enrolled_date DATE
+);
+GO
+```
+
+🔹 **Show the table:**
+
+```sql
+SELECT TABLE_SCHEMA, TABLE_NAME
+FROM INFORMATION_SCHEMA.TABLES
+WHERE TABLE_TYPE = 'BASE TABLE';
+GO
+```
+
+🔹 **Insert a test row:**
+
+```sql
+INSERT INTO students (id, name, enrolled_date)
+VALUES (1, 'Alice Smith', '2024-06-01');
+GO
+```
+
+🔹 **Query the table:**
+
+```sql
+SELECT * FROM students;
+GO
+```
+
+✅ You should see one student record displayed.
+
+---
+
+## 🪼 Clean Up (Optional)
 
 ```bash
 az group delete --name sql-demo-rg --yes --no-wait
@@ -141,5 +183,5 @@ az group delete --name sql-demo-rg --yes --no-wait
 
 ---
 
-✅ **Demo complete – students have successfully deployed and connected to an Azure SQL Database using multiple tools!**
+📉 **Demo complete – students have successfully deployed and connected to an Azure SQL Database using multiple tools!**
 
