@@ -189,6 +189,10 @@ touch app.py requirements.txt
 **app.py**
 ```python
 import os
+import requests
+from flask import Flask
+
+app = Flask(__name__)
 
 STUDENT_SERVICE_APP = os.environ.get("STUDENT_SERVICE_APP")
 
@@ -198,6 +202,7 @@ def get_report(id):
     r = requests.get(url)
     student = r.json()
     return f"Student {student['name']} is majoring in {student['major']}"
+
 ```
 
 **requirements.txt**
