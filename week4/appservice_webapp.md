@@ -140,10 +140,10 @@ You are provisioning a new web application on **Azure App Service**.
 
     ```json
     "defaultHostName": "$APP_NAME.azurewebsites.net",
-    "deploymentLocalGitUrl": "https://<username>@$APP_NAME.scm.azurewebsites.net/demo-webapp123.git",
+    "deploymentLocalGitUrl": "https://<username>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git",
     ...
     ```
-#### ⚠️ If Your Git Deployment URL Shows `None@` (e.g., `https://None@demo-webapp23415.scm.azurewebsites.net/demo-webapp23415.git`)
+#### ⚠️ If Your Git Deployment URL Shows `None@` (e.g., `https://None@$APP_NAME.scm.azurewebsites.net/demo-$APP_NAME.git`)
 
 This means Azure CLI was unable to detect your deployment username.  
 You need to set up App Service deployment credentials before you can deploy code.
