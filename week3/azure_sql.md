@@ -109,8 +109,6 @@ docker run -it --rm mcr.microsoft.com/mssql-tools \
 
 ---
 
-
-
 #### 🧰 Option 2: MySQL Workbench via ODBC (Windows/Mac)
 
 1. Install **ODBC Driver 18 for SQL Server** from Microsoft
