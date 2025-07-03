@@ -13,7 +13,7 @@ Implement a decoupled Web-Queue-Worker pattern using:
 ## 🧭 Prerequisites
 
 - Azure Portal access
-- Azure CLI installed
+- Azure CLI installed and authenticated (`az login`)
 - Python 3.11 and Azure Functions Core Tools
 
 ---
@@ -58,7 +58,7 @@ az storage queue create \
 
 This app adds messages to the queue.
 
-📄 `application.py`
+**application.py**
 
 ```python
 from flask import Flask, request
@@ -79,14 +79,14 @@ def enqueue():
     return f"Task '{task}' added to queue."
 ```
 
-📄 `requirements.txt`
+**requirements.txt**
 
 ```
 flask
 azure-storage-queue
 ```
 
-📄 `startup.txt` (for App Service)
+**startup.txt** (for App Service)
 
 ```
 python application.py
@@ -158,9 +158,29 @@ func azure functionapp publish workerfunc123 --python
 
 ### 5️⃣ Test End-to-End
 
-1. Open the web app form → submit a task
-2. Message goes into `taskqueue`
-3. Azure Function automatically triggers and logs the task
+1. In your browser, open:\
+   `https://<your-web-app-name>.azurewebsites.net/`
+2. Submit a new task using the web form.
+3. Message goes into `taskqueue`.
+4. Azure Function automatically triggers and logs the task.
+
+#### 🚦 Expected Output
+
+- Your Azure Function logs should include:
+  ```
+  Processing task: <your-task>
+  ```
+- If you see this log, your pipeline works!
+
+**Troubleshooting:**
+
+- If messages are not processed, check:
+  - The function is running and connected to the correct storage account/queue.
+  - Your connection string is correct in both web app and function.
+  - You can view logs via the Portal or:
+    ```bash
+    az functionapp log tail --name workerfunc123 --resource-group webqueue-demo-rg
+    ```
 
 ---
 
@@ -172,5 +192,5 @@ az group delete --name webqueue-demo-rg --yes --no-wait
 
 ---
 
-✅ **Demo complete – students have built a decoupled cloud application using the Web-Queue-Worker pattern with Azure services!**
+✅ **Demo complete – you have built a decoupled cloud application using the Web-Queue-Worker pattern with Azure services!**
 

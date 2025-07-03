@@ -143,17 +143,32 @@ az webapp create \
 ```
 Save the `deploymentLocalGitUrl` output from the command.
 
-**Deploy code via Git:**
+**Set Git Remote Deployment URL: (One Time Only Setup)**
 ```bash
 cd studentservice
 git init
 git remote add azure https://<your-username>@"$STUDENT_SERVICE_APP".scm.azurewebsites.net/"$STUDENT_SERVICE_APP".git
+```
+
+**Deploy The service: (Reuse and deploy after every update to the service)**
+```bash
 git add .
 git commit -m "Initial commit - Student Info Service"
 git push azure main:master
 ```
 Use your Azure App Service deployment credentials when prompted.  
 Wait for deployment to complete.
+
+### 🚦 Test the Student Info Service
+
+### Test Student Service
+
+Open this URL in your browser (replace with your app name):
+
+`https://"$STUDENT_SERVICE_APP".azurewebsites.net/student/101`
+### How It Works
+
+When you visit `/student/101` in your browser, Flask runs the function with `id="101"`, creates a Python dictionary for the student, and returns it as a JSON response. The values are generated in the code—no database or file needed.
 
 ---
 
@@ -174,13 +189,14 @@ touch app.py requirements.txt
 
 **app.py**
 ```python
-from flask import Flask
-import requests
-app = Flask(__name__)
+import os
+
+STUDENT_SERVICE_APP = os.environ.get("STUDENT_SERVICE_APP")
 
 @app.route('/report/<id>')
 def get_report(id):
-    r = requests.get(f"https://"$STUDENT_SERVICE_APP".azurewebsites.net/student/{id}")
+    url = f"https://{STUDENT_SERVICE_APP}.azurewebsites.net/student/{id}"
+    r = requests.get(url)
     student = r.json()
     return f"Student {student['name']} is majoring in {student['major']}"
 ```
@@ -203,17 +219,38 @@ az webapp create \
 ```
 Save the `deploymentLocalGitUrl` output from the command.
 
-**Deploy code via Git:**
+**Set Git Remote Deployment URL: (One Time Only Setup)**
 ```bash
 cd reportservice
 git init
 git remote add azure https://<your-username>@"$REPORT_SERVICE_APP".scm.azurewebsites.net/"$REPORT_SERVICE_APP".git
+```
+
+**Deploy The service: (Reuse and deploy after every update to the service)**
+```bash
 git add .
 git commit -m "Initial commit - Report Service"
 git push azure main:master
 ```
 Use your Azure App Service deployment credentials when prompted.  
 Wait for deployment to complete.
+
+> **Note:**  
+> You only need to set the `STUDENT_SERVICE_APP` environment variable **once per Report Service deployment** using this command:
+> 
+> ```bash
+> az webapp config appsettings set \
+>   --resource-group microservice-demo-rg \
+>   --name "<your report service app name>"  \
+>   --settings STUDENT_SERVICE_APP="<your student service app name>"
+> ```
+>
+> This setting will persist through restarts and redeployments.
+> Set it again only if you:
+> - Change the Student Service app name,
+> - Delete and recreate the Report Service,
+> - Or want to point to a different Student Service instance.
+
 
 ---
 
