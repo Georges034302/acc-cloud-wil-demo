@@ -107,6 +107,8 @@ az appservice plan create \
 
 🔸 **CLI:**
 ```bash
+APP_NAME=webapp$RANDOM
+
 az webapp create \
   --resource-group appservice-demo-rg \
   --plan demo-plan \
