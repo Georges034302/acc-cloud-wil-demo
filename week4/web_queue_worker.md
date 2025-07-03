@@ -15,28 +15,58 @@ Implement a decoupled Web-Queue-Worker pattern using:
 - Azure Portal access
 - Azure CLI installed and authenticated (`az login`)
 - Python 3.11 and Azure Functions Core Tools
+- Register with Miscroft.Web
 
+  #### ⚙️ Install Azure Functions Core Tools (One Time Setup Only)
+
+  Run the following commands to install Azure Azure Functions Core Tools:
+
+  ```bash
+  curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+  sudo apt-get update
+  sudo apt-get install azure-functions-core-tools-4
+  ```
+  Verify installation:
+
+  ```bash
+  az --version
+  func --version
+  ```
+
+  #### 📝 Register with Miscroft.Web (One Time Setup Only)
+    ```bash
+    az provider register --namespace Microsoft.Web
+    ```
+    Confirm the Registration:
+    ```bash
+    az provider show --namespace Microsoft.Web --query registrationState
+    ```
 ---
 
 ## 👣 Step-by-Step Instructions (Azure Portal + CLI)
 
-### 1️⃣ Create the Resource Group and Storage Account
+### 1️⃣ Setup Resource Group and Storage Queue
 
 ```bash
 az group create --name webqueue-demo-rg --location australiaeast
+```
+#### 🗃️ Create a Queue in Storage
+
+```bash
+STORAGE_QUEUE=webqueuestorage$RANDOM 
 
 az storage account create \
-  --name webqueuestorage123 \
+  --name $STORAGE_QUEUE \
   --resource-group webqueue-demo-rg \
   --location australiaeast \
   --sku Standard_LRS
 ```
 
-Get connection string:
+#### 🔗 Get connection string:
 
 ```bash
 az storage account show-connection-string \
-  --name webqueuestorage123 \
+  --name $STORAGE_QUEUE \
   --resource-group webqueue-demo-rg --query connectionString --output tsv
 ```
 
@@ -44,19 +74,47 @@ Save the value as `STORAGE_CONN_STRING` for later use.
 
 ---
 
-### 2️⃣ Create a Queue in Storage
+#### 📋 Create a Queue in Storage
 
 ```bash
 az storage queue create \
-  --account-name webqueuestorage123 \
+  --account-name $STORAGE_QUEUE \
   --name taskqueue
 ```
 
+#### 🛡️ Assign Storage Queue Data Contributor Role via Azure Portal
+
+1. Go to the **Azure Portal**: [https://portal.azure.com](https://portal.azure.com)
+
+2. Navigate to your **Storage Account** (e.g., `webqueuestorage123`).
+
+3. In the left menu, click **Access control (IAM)**.
+
+4. Click on the **+ Add > Add role assignment** button.
+
+5. In the **Role** dropdown, select **Storage Queue Data Contributor**.
+
+6. In the **Assign access to** dropdown, select the identity type:
+   - **Managed identity** (if your app uses Managed Identity)
+   - Or **User, group, or service principal** (for service principals or users)
+
+7. In the **Select** box, find and select your **App Service** or **Azure Function** principal.
+
+8. Click **Save** to assign the role.
+
 ---
 
-### 3️⃣ Deploy a Web App (Queue Producer)
+### 2️⃣ Deploy a Web App (Queue Producer)
 
-This app adds messages to the queue.
+This simple Flask app allows users to add messages to an Azure Storage Queue.
+
+#### 📁 Create the Folder Structure and Files
+
+```bash
+mkdir -p webqueueapp
+cd webqueueapp
+touch application.py requirements.txt startup.txt
+```
 
 **application.py**
 
@@ -92,32 +150,60 @@ azure-storage-queue
 python application.py
 ```
 
-Create App Service Plan + Web App:
+#### 🛠️ Create App Service Plan
 
 ```bash
-az appservice plan create --name webqueue-plan --resource-group webqueue-demo-rg --sku B1 --is-linux
+az appservice plan create \
+  --name webqueue-plan \
+  --resource-group webqueue-demo-rg \
+  --sku B1 \
+  --is-linux
+```
+
+#### 🚀 Create App Service Web App:
+
+```bash
+WEB_APP=webqueueapp$RANDOM
 
 az webapp create \
   --resource-group webqueue-demo-rg \
   --plan webqueue-plan \
-  --name webqueueapp123 \
+  --name $WEB_APP \
   --runtime "PYTHON|3.11"
 ```
 
-Configure settings:
+#### ⚙️ Configure settings:
 
 ```bash
 az webapp config appsettings set \
   --resource-group webqueue-demo-rg \
-  --name webqueueapp123 \
-  --settings STORAGE_CONN_STRING="<connection_string>"
+  --name $WEB_APP \
+  --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING"
 ```
 
-Deploy via Zip or Git.
+#### 🔄 Deploy via Git:
+
+**Set Git Remote Deployment URL: (One Time Only Setup)**
+```bash
+cd webqueueapp
+git init
+git remote add azure https://<your-username>@"$WEB_APP".scm.azurewebsites.net/"$WEB_APP".git
+```
+
+**Deploy The queue app: (Reuse and deploy after every update to the application)**
+```bash
+git add .
+git commit -m "Web app deployment"
+git push azure main:master
+```
+Use your Azure App Service deployment credentials when prompted.  
+After you push, Azure automatically builds and deploys your app, then restarts it.
+
+Once deployment completes, verify your app by visiting:  `https://<your-app-name>.azurewebsites.net`
 
 ---
 
-### 4️⃣ Create Azure Function to Process Queue (Worker)
+### 3️⃣ Create Azure Function to Process Queue (Worker)
 
 ```bash
 func init workerfunc --python
@@ -148,7 +234,7 @@ Update `function.json`:
 }
 ```
 
-Deploy to Azure:
+#### 🚀 Deploy to Azure:
 
 ```bash
 func azure functionapp publish workerfunc123 --python
@@ -156,7 +242,7 @@ func azure functionapp publish workerfunc123 --python
 
 ---
 
-### 5️⃣ Test End-to-End
+### 4️⃣ Test End-to-End
 
 1. In your browser, open:\
    `https://<your-web-app-name>.azurewebsites.net/`
@@ -181,7 +267,6 @@ func azure functionapp publish workerfunc123 --python
     ```bash
     az functionapp log tail --name workerfunc123 --resource-group webqueue-demo-rg
     ```
-
 ---
 
 ## 🧼 Clean Up (Optional)
