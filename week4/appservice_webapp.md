@@ -218,14 +218,19 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-🔸 **Initialize and push the app to Azure**
+**Set Git Remote Deployment URL: (One Time Only Setup)**
 ```bash
+cd studentservice
 git init
-git remote add azure <GIT_URL_FROM_STEP_2>
-git add .
-git commit -m "Deploy simple Flask app"
-git push azure main:master
+git remote add azure https://<your-username>@"$APP_NAMEP".scm.azurewebsites.net/"$APP_NAME".git
 ```
+
+**Deploy The service: (Reuse and deploy after every update to the service)**
+```bash
+git add .
+git commit -m "Initial commit - app"
+git 
+
 ✅ After push, browse to `https://$APP_NAME.azurewebsites.net`
 
 🔸 **Alternative Deployment (Zip):**
