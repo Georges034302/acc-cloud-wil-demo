@@ -50,7 +50,6 @@ After you create each web app in Azure (both microservices), you’ll use **loca
     ```json
     "defaultHostName": "<app-name>.azurewebsites.net",
     "deploymentLocalGitUrl": "https://<username>@<app-name>.scm.azurewebsites.net/<app-name>.git",
-    ...
     ```
 - **Copy the `deploymentLocalGitUrl` value** for each microservice—you’ll need this to set up your Git remote.
 
