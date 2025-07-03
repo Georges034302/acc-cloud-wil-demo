@@ -69,3 +69,7 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   - Integrating with other Azure services
   - Event-driven and scheduled function execution
 </details>
+
+---
+#### 🧑‍🏫 Author: Georges Bou Ghantous
+<sub><i>This repository delivers hands-on Azure training, guiding learners through scripting, networking, storage security, containers, and serverless computing using real-world scenarios and best practices.</i></sub>
