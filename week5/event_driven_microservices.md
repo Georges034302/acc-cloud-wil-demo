@@ -1,4 +1,4 @@
-# 🔔 Demo Guide: Event-Based Microservice Communication
+# 🔔 Demo 2 Guide: Event-Based Microservice Communication
 
 ## 🎯 Objective
 
