@@ -19,7 +19,14 @@ Build a Docker container **locally**, push it to **Azure Container Registry (ACR
 
 ### 1️⃣ Build Local Docker Image
 
-📁 Project Structure:
+#### 📁Create Project Structure:
+
+```bash
+mkdir webapp
+cd webapp
+touch app.py requirements.txt Dockerfile
+```
+#### ✅ Expected Outcome:
 
 ```
 webapp/
@@ -28,7 +35,28 @@ webapp/
 ├── Dockerfile
 ```
 
-📄 Sample `Dockerfile`:
+#### 📄 Sample `app.py`:
+
+```python
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "<h1>Hello from Azure App Service Container!</h1>"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port
+```
+
+#### 📄 Sample `requirements.txt`:
+
+```
+flask
+```
+
+#### 📄 Sample `Dockerfile`:
 
 ```Dockerfile
 FROM python:3.11
@@ -39,7 +67,7 @@ COPY . .
 CMD ["python", "app.py"]
 ```
 
-🔸 **CLI:**
+#### 🔸 Build Docler 
 
 ```bash
 cd webapp
@@ -51,11 +79,23 @@ docker build -t webapp:v1 .
 
 ### 2️⃣ Create Resource Group and ACR
 
-🔸 **CLI:**
+#### 🔸 Register the Provider to enable the creation and management of web-related resources (App Service) 
+
+```bash
+az provider register --namespace Microsoft.Web
+
+az provider show --namespace Microsoft.Web --query "registrationState"
+```
+
+#### 🔸 Create Resource Group using 
 
 ```bash
 az group create --name localbuild-rg --location australiaeast
+```
 
+#### 🔸 Create ACR 
+
+```bash
 az acr create \
   --resource-group localbuild-rg \
   --name localbuildacr123 \
@@ -63,7 +103,7 @@ az acr create \
   --admin-enabled true
 ```
 
-🔸 **Portal:**
+#### 🔸 Create Resource Group using **Portal:** (Optional) 
 
 1. Go to **Container Registries** → **+ Create**
 2. Resource Group: `localbuild-rg`
@@ -72,35 +112,41 @@ az acr create \
 5. Enable Admin access
 6. Review + Create
 
-🔸 **ARM Template Deployment:** Save ACR ARM template as `acr-arm.json` and run:
-
-```bash
-az deployment group create \
-  --resource-group localbuild-rg \
-  --template-file acr-arm.json
-```
 
 ---
 
 ### 3️⃣ Push Image to ACR
 
-🔸 **CLI:**
+#### 🔸 Login to ACR 
 
 ```bash
 az acr login --name localbuildacr123
+```
+#### 🔸 Build the Docker image locally
 
+```bash
+docker build -t webapp:v1 .
+```
+
+#### 🔸 Tag the Docker image
+
+```bash
 docker tag webapp:v1 localbuildacr123.azurecr.io/webapp:v1
+```
 
+#### 🔸 Push the Docker image to ACR
+
+```bash
 docker push localbuildacr123.azurecr.io/webapp:v1
 ```
 
-✅ The image is now hosted in ACR
+#### ✅ The image is now hosted in ACR
 
 ---
 
 ### 4️⃣ Deploy Container to Azure App Service
 
-🔸 **CLI:**
+#### 🔸 Create App Service plan
 
 ```bash
 az appservice plan create \
@@ -108,73 +154,210 @@ az appservice plan create \
   --resource-group localbuild-rg \
   --is-linux \
   --sku B1
+```
+
+#### 🔸 Create App Service app (app name must be unique)
+
+```bash
+APP_NAME=localwebapp$RANDOM
 
 az webapp create \
   --resource-group localbuild-rg \
   --plan localbuild-plan \
-  --name localwebapp123 \
-  --deployment-container-image-name localbuildacr123.azurecr.io/webapp:v1
-
-az webapp config container set \
-  --name localwebapp123 \
-  --resource-group localbuild-rg \
-  --docker-custom-image-name localbuildacr123.azurecr.io/webapp:v1 \
-  --docker-registry-server-url https://localbuildacr123.azurecr.io \
-  --docker-registry-server-user $(az acr credential show --name localbuildacr123 --query username -o tsv) \
-  --docker-registry-server-password $(az acr credential show --name localbuildacr123 --query passwords[0].value -o tsv)
+  --name $APP_NAME \
+  --deployment-container-image-name $APP_NAME.azurecr.io/webapp:v1
 ```
 
-🔸 **Portal:**
+#### 🔸 Enable Managed Identity on the App Service
 
-1. Go to **App Services** → **+ Create**
-2. App Name: `localwebapp123` → Region: `Australia East`
-3. Publish: Docker Container → OS: Linux
-4. Plan: `localbuild-plan`
-5. Docker:
-   - Source: Azure Container Registry
-   - Registry: `localbuildacr123`
-   - Image: `webapp:v1`
-6. Review + Create
+```bash
+az webapp identity assign \
+  --name $APP_NAME \
+  --resource-group localbuild-rg
+```
 
-🔸 **ARM Template:** Save as `webapp-arm.json`:
+#### 🔸 Get the Principal ID of the App Service
+
+```bash
+PRINCIPAL_ID=$(az webapp identity show \
+  --name $APP_NAME \
+  --resource-group localbuild-rg \
+  --query principalId \
+  --output tsv)
+```
+
+#### 🔸 Assign AcrPull role to the App's Managed Identity for ACR access
+
+```bash
+az role assignment create \
+  --assignee $PRINCIPAL_ID \
+  --scope $(az acr show --name localbuildacr123 --query id --output tsv) \
+  --role AcrPull
+```
+
+#### 🔸 Deploys a Docker container from ACR to an Azure Web App
+
+```bash
+az webapp config container set \
+  --name $APP_NAME \
+  --resource-group localbuild-rg \
+  --docker-custom-image-name localbuildacr123.azurecr.io/webapp:v1 \
+  --docker-registry-server-url https://localbuildacr123.azurecr.io
+```
+
+---
+### 5️⃣ Test the Deployment
+
+Open your browser and navigate to:
+
+```
+echo $APP_NAME
+https://$APP_NAME.azurewebsites.net
+```
+
+✅ **You should see your running app.**
+
+---
+
+### 6️⃣ Deploy Docker Container to Azure Web App via **Portal:** (Optional)
+
+#### 1. Create Resource Group (Optional)
+- Go to **Azure Portal** → Search for **Resource groups**
+- Click **➕ Create**
+- Set:
+  - **Subscription**: Your active subscription
+  - **Resource group name**: `localbuild-rg`
+  - **Region**: `Australia East` or your preferred location
+- Click **Review + Create** → **Create**
+
+#### 2. Create App Service Plan (Linux)
+- Go to **App Service Plans** → **➕ Create**
+- Set:
+  - **Resource Group**: `localbuild-rg`
+  - **Name**: `localbuild-plan`
+  - **Operating System**: **Linux**
+  - **Region**: `Australia East`
+  - **Pricing Tier**: **B1 Basic** (or higher)
+- Click **Review + Create** → **Create**
+
+#### 🔸 3. Create Web App for Container
+- Go to **App Services** → **➕ Create**
+- Set:
+  - **Resource Group**: `localbuild-rg`
+  - **Name**: e.g., `localwebapp123` (must be globally unique)
+  - **Publish**: **Docker Container**
+  - **Operating System**: **Linux**
+  - **Region**: `Australia East`
+  - **App Service Plan**: Choose `localbuild-plan`
+- Under **Docker** tab:
+  - **Options**: **Single Container**
+  - **Image Source**: **Azure Container Registry**
+  - **Registry**: Select `localbuildacr123`
+  - **Image**: `webapp`
+  - **Tag**: `v1`
+- Click **Review + Create** → **Create**
+
+#### 🔸 4. Enable System-Assigned Managed Identity
+- Navigate to your new Web App → **Identity**
+- Under **System assigned**, set **Status** to **On**
+- Click **Save**
+
+#### 🔸 5. Assign `AcrPull` Role to Web App Identity
+- Go to **Container Registry** → `localbuildacr123`
+- Click **Access Control (IAM)** → **+ Add > Add role assignment**
+- Role: **AcrPull**
+- Assign access to: **Managed identity**
+- Select:
+  - Subscription: same as Web App
+  - Resource: your Web App (`localwebapp123`)
+- Click **Save**
+
+---
+
+### 7️⃣ Create App Service app using **ARM Template** Save as `webapp-arm.json` (Optional)
 
 ```json
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "type": "string"
+    },
+    "acrName": {
+      "type": "string"
+    },
+    "acrLoginServer": {
+      "type": "string"
+    },
+    "resourceGroupName": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "australiaeast"
+    },
+    "planName": {
+      "type": "string",
+      "defaultValue": "localbuild-plan"
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "B1"
+    }
+  },
   "resources": [
     {
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2022-03-01",
-      "name": "localbuild-plan",
-      "location": "australiaeast",
-      "sku": { "name": "B1", "tier": "Basic" },
-      "properties": { "reserved": true }
+      "name": "[parameters('planName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]",
+        "tier": "Basic"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
     },
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2022-03-01",
-      "name": "localwebapp123",
-      "location": "australiaeast",
-      "kind": "app,linux,container",
-      "properties": {
-        "serverFarmId": "localbuild-plan",
-        "siteConfig": {
-          "linuxFxVersion": "DOCKER|localbuildacr123.azurecr.io/webapp:v1",
-          "appSettings": [
-            { "name": "DOCKER_REGISTRY_SERVER_URL", "value": "https://localbuildacr123.azurecr.io" },
-            { "name": "DOCKER_REGISTRY_SERVER_USERNAME", "value": "<acr-username>" },
-            { "name": "DOCKER_REGISTRY_SERVER_PASSWORD", "value": "<acr-password>" }
-          ]
-        }
+      "name": "[parameters('appName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
       },
-      "dependsOn": ["Microsoft.Web/serverfarms/localbuild-plan"]
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('planName'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('planName'))]",
+        "siteConfig": {
+          "linuxFxVersion": "[concat('DOCKER|', parameters('acrLoginServer'), '/webapp:v1')]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "name": "[guid(resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName')), 'acrpull')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', parameters('appName'))]"
+      ],
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
+        "principalId": "[reference(resourceId('Microsoft.Web/sites', parameters('appName')), '2022-03-01', 'Full').identity.principalId]",
+        "principalType": "ServicePrincipal",
+        "scope": "[resourceId('Microsoft.ContainerRegistry/registries', parameters('acrName'))]"
+      }
     }
   ]
 }
 ```
 
-Deploy it:
+#### 🔸 Deploy the ARM Template:
 
 ```bash
 az deployment group create \
@@ -184,23 +367,11 @@ az deployment group create \
 
 ---
 
-### 5️⃣ Test the Deployment
-
-Open your browser:
-
-```
-https://localwebapp123.azurewebsites.net
-```
-
-✅ You should see your running app.
-
----
-
 ## 🧼 Clean Up (Optional)
 
 ```bash
 az group delete --name localbuild-rg --yes --no-wait
 ```
 
-✅ **Demo complete – students built a Docker image locally, pushed to ACR, and deployed to Azure App Service via CLI, Portal, and ARM.**
+✅ **Demo complete – You built a Docker image locally, pushed to ACR, and deployed to Azure App Service via CLI, Portal, and ARM.**
 
