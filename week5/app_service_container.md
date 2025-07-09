@@ -19,7 +19,7 @@ Build a Docker container **locally**, push it to **Azure Container Registry (ACR
 
 ### 1️⃣ Build Local Docker Image
 
-#### 📁Create Project Structure:
+#### 📁 Create Project Structure:
 
 ```bash
 mkdir webapp

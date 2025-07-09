@@ -12,7 +12,10 @@ Simulate asynchronous communication between microservices using Azure Storage Qu
 - Azure subscription and access to Azure Portal
 - Python 3.11 installed (3.10 as fallback)
 - Visual Studio Code with Azure Functions Extension (for local deployment)
-
+- **Azure Functions Core Tools installed:**  
+  ```bash
+  npm install -g azure-functions-core-tools@4 --unsafe-perm true
+  ```
 ---
 
 ## 👣 Step-by-Step Instructions (CLI Only)
