@@ -1,4 +1,4 @@
-# 🔔 Demo 2 Guide: Event-Based Microservice Communication
+# 🔔 Demo 3 Guide: Event-Based Microservice Communication
 
 ## 🎯 Objective
 
@@ -18,15 +18,16 @@ Simulate asynchronous communication between microservices using Azure Storage Qu
   ```
 ---
 
-## 👣 Step-by-Step Instructions (CLI Only)
+## 👣 Step-by-Step Instructions
 
 ### 1️⃣ Create Resource Group and Storage Account
 
 ```bash
 az group create --name event-demo-rg --location australiaeast
 
+EVENT_STORAGE=eventdemostorage$RANDOM
 az storage account create \
-  --name eventdemostorage123 \
+  --name $EVENT_STORAGE \
   --resource-group event-demo-rg \
   --location australiaeast \
   --sku Standard_LRS
@@ -37,14 +38,14 @@ az storage account create \
 ```bash
 # Get storage account key
 STORAGE_KEY=$(az storage account keys list \
-  --account-name eventdemostorage123 \
+  --account-name $EVENT_STORAGE \
   --resource-group event-demo-rg \
   --query "[0].value" --output tsv)
 
 # Create queue using key auth
 az storage queue create \
   --name orders \
-  --account-name eventdemostorage123 \
+  --account-name $EVENT_STORAGE \
   --account-key $STORAGE_KEY
 ```
 
@@ -53,7 +54,7 @@ az storage queue create \
 To allow your user account to manage the storage account and related services:
 
 1. Go to [Azure Portal](https://portal.azure.com)
-2. Navigate to **Storage accounts** → `eventdemostorage123`
+2. Navigate to **Storage accounts** → `eventdemostorage123 <unique name>`
 3. In the left menu, select **Access control (IAM)**
 4. Click **+ Add > Add role assignment**
 5. Role: **Contributor**
@@ -73,7 +74,7 @@ az functionapp create \
   --runtime-version 3.11 \
   --functions-version 4 \
   --name queueprocessorfunc \
-  --storage-account eventdemostorage123
+  --storage-account $EVENT_STORAGE
 ```
 
 ### 5️⃣ Create Function Locally
@@ -114,7 +115,7 @@ func azure functionapp publish queueprocessorfunc
 ```bash
 az storage message put \
   --queue-name orders \
-  --account-name eventdemostorage123 \
+  --account-name $EVENT_STORAGE \
   --account-key $STORAGE_KEY \
   --content "Order #101 received"
 ```

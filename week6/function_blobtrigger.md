@@ -1,4 +1,4 @@
-# ⚡️ Demo 2 Guide: Trigger Azure Function with Blob Storage Event
+# ⚡️ Demo 4 Guide: Trigger Azure Function with Blob Storage Event
 
 ## 🎯 Objective
 
