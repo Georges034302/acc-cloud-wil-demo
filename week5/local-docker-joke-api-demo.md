@@ -59,8 +59,14 @@ jokes = [
     "What is a programmer’s favorite hangout place? The Foo Bar."
 ]
 
+@app.route("/jokes")
+def get_jokes():
+    # Return all jokes as a formatted JSON list
+    return jsonify({"jokes": jokes})
+
 @app.route("/joke")
-def joke():
+def get_joke():
+    # Return a single random joke
     return jsonify({"joke": random.choice(jokes)})
 
 if __name__ == "__main__":
@@ -84,15 +90,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["python", "app.py"]
-```
-
-✅ Your project structure:
-
-```
-joke-api/
-├── app.py
-├── requirements.txt
-└── Dockerfile
 ```
 
 ---
