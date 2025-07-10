@@ -47,7 +47,7 @@ def home():
     return "<h1>Hello from Azure App Service Container!</h1>"
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=80)
 ```
 
 #### 📄 Sample `requirements.txt`:
@@ -64,6 +64,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY . .
+EXPOSE 80
 CMD ["python", "app.py"]
 ```
 
