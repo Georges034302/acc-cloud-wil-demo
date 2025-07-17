@@ -1,7 +1,7 @@
-RESOURCE_GROUP="student-rg"
+RESOURCE_GROUP="student-node-rg"
 LOCATION="australiaeast"
-STORAGE_NAME="studentappstorage2025"
-FUNCTION_APP="student-app"
+STORAGE_NAME="studentappstoragethu2025"
+FUNCTION_APP="student-app-nodejs"
 CONTAINER_NAME="student-files"
 
 echo "🚀 Starting Azure resource group creation..."

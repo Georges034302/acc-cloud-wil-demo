@@ -13,15 +13,13 @@ students.csv                    # Sample CSV input
 upload.sh                       # Bash script to upload a test CSV
 
 student-app/
-├── ProcessStudentCSV/                 ✅ function folder
-│   ├── function.json                  ✅ trigger config
-│   ├── index.js                       ✅ blob handler
-│   ├── parseCsv.js                    ✅ parse CSV file
-│   ├── insertStudent.js               ✅ create student record
-│   └── tableClient.js                 ✅ creates Table storage
-├── host.json                          ✅ global configuration for Function app
-├── local.settings.json
-└── package.json
+└── src
+    ├── function.json
+    └── functions
+        ├── index.js
+        ├── insertStudent.js
+        ├── parseCsv.js
+        └── tableClient.js
 ```
 
 ---

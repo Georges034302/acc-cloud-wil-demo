@@ -3,7 +3,7 @@
 
 echo "🚀 Uploading students.csv to Azure Blob Storage..."
 az storage blob upload \
-  --account-name studentappstorage2025 \
+  --account-name studentappstoragethu2025 \
   --container-name student-files \
   --name students.csv \
   --file students.csv \
