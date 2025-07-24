@@ -153,10 +153,11 @@ Update host.json
   },
   "extensions": {
     "queues": {
-      "messageEncoding": "Raw"
+      "messageEncoding": "Base64"
     }
   }
 }
+
 ```
 
 Install dependencies:
@@ -244,8 +245,10 @@ az webapp log config \
 View App Insights:
 
 ```bash
+SUB_ID=$(az account show --query id --output tsv)
+
 az monitor app-insights query \
-  --app "/subscriptions/<Subscription-ID>/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc" \
+  --app "/subscriptions/$SUB_ID/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc" \
   --analytics-query "exceptions | order by timestamp desc | limit 5"
 ```
 

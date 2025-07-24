@@ -14,7 +14,7 @@
   },
   "extensions": {
     "queues": {
-      "messageEncoding": "Raw"
+      "messageEncoding": "Base64"
     }
   }
 }
