@@ -21,14 +21,16 @@ Create an Azure Logic App that monitors an email inbox for incoming messages wit
 ```bash
 az group create --name logicapp-rg --location australiaeast
 
+STORAGE_ACCOUNT=emailstorage$RANDOM
+
 az storage account create \
-  --name emailblobsa123 \
+  --name $STORAGE_ACCOUNT \
   --resource-group logicapp-rg \
   --location australiaeast \
   --sku Standard_LRS
 
 az storage container create \
-  --account-name emailblobsa123 \
+  --account-name $STORAGE_ACCOUNT \
   --name attachments \
   --auth-mode login
 ```
@@ -47,7 +49,7 @@ az storage container create \
 
 🔸 **CLI:**
 ```bash
-az logicapp create \
+az logic workflow create \
   --resource-group logicapp-rg \
   --name email-to-blob \
   --location australiaeast \
@@ -72,13 +74,13 @@ az logicapp create \
 
 🔸 **CLI:**
 ```bash
-LOGIC_ID=$(az logicapp show \
+LOGIC_ID=$(az logic workflow show \
   --name email-to-blob \
   --resource-group logicapp-rg \
   --query identity.principalId --output tsv)
 
 STORAGE_ID=$(az storage account show \
-  --name emailblobsa123 \
+  --name $STORAGE_ACCOUNT \
   --resource-group logicapp-rg \
   --query id --output tsv)
 
@@ -112,63 +114,100 @@ az role assignment create \
 🔸 **ARM JSON** (save as `logicapp-definition.json`):
 ```json
 {
-  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-  "actions": {
-    "For_each": {
-      "foreach": "@triggerOutputs()?['body/Attachments']",
-      "actions": {
-        "Create_blob": {
-          "inputs": {
-            "host": {
-              "connection": {
-                "name": "@parameters('$connections')['azureblob']['connectionId']"
-              }
-            },
-            "method": "post",
-            "path": "/v2/datasets/default/files",
-            "queries": {
-              "folderPath": "/attachments",
-              "name": "@items('For_each')?['Name']"
-            },
-            "body": "@items('For_each')?['ContentBytes']"
-          },
-          "runAfter": {},
-          "type": "ApiConnection"
-        }
-      },
-      "type": "Foreach"
-    }
-  },
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
-  "outputs": {},
-  "parameters": {
-    "$connections": {
-      "defaultValue": {},
-      "type": "Object"
-    }
-  },
-  "triggers": {
-    "When_a_new_email_arrives": {
-      "inputs": {
-        "host": {
-          "connection": {
-            "name": "@parameters('$connections')['office365']['connectionId']"
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "email-to-blob",
+      "location": "australiaeast",
+      "properties": {
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "When_a_new_email_arrives_(V3)": {
+              "type": "ApiConnectionNotification",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['office365']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/v3/Mail/OnNewEmail",
+                "queries": {
+                  "importance": "Any",
+                  "fetchOnlyWithAttachment": true,
+                  "includeAttachments": true,
+                  "folderPath": "Inbox"
+                }
+              },
+              "splitOn": "@triggerBody()?['value']"
+            }
+          },
+          "actions": {
+            "For_each": {
+              "foreach": "@triggerBody()?['attachments']",
+              "actions": {
+                "Create_blob_(V2)": {
+                  "type": "ApiConnection",
+                  "inputs": {
+                    "host": {
+                      "connection": {
+                        "name": "@parameters('$connections')['azureblob']['connectionId']"
+                      }
+                    },
+                    "method": "post",
+                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('attachments'))}/files",
+                    "body": "@base64ToBinary(item()?['contentBytes'])",
+                    "queries": {
+                      "folderPath": "/attachments",
+                      "name": "@items('For_each')?['name']",
+                      "queryParametersSingleEncoded": true
+                    }
+                  },
+                  "runtimeConfiguration": {
+                    "contentTransfer": {
+                      "transferMode": "Chunked"
+                    }
+                  }
+                }
+              },
+              "runAfter": {},
+              "type": "Foreach"
+            }
+          },
+          "outputs": {},
+          "parameters": {
+            "$connections": {
+              "type": "Object",
+              "defaultValue": {}
+            }
           }
         },
-        "method": "get",
-        "path": "/v2/Mail/OnNewEmail",
-        "queries": {
-          "folderPath": "Inbox",
-          "hasAttachment": true
+        "parameters": {
+          "$connections": {
+            "type": "Object",
+            "value": {
+              "office365": {
+                "id": "/subscriptions/127b5e15-2241-478b-b9a7-5b5ce4ca7dbb/providers/Microsoft.Web/locations/australiaeast/managedApis/office365",
+                "connectionId": "/subscriptions/127b5e15-2241-478b-b9a7-5b5ce4ca7dbb/resourceGroups/logicapp-rg2/providers/Microsoft.Web/connections/office365",
+                "connectionName": "office365"
+              }
+            }
+          }
         }
-      },
-      "recurrence": {
-        "frequency": "Minute",
-        "interval": 1
-      },
-      "type": "ApiConnection"
+      }
     }
-  }
+  ]
 }
 ```
 
