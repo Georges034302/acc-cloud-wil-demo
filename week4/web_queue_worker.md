@@ -100,13 +100,24 @@ STORAGE_CONN_STRING=your-actual-connection-string-here
 #### 📜 Create App Service Plan and Web App
 
 ```bash
-az appservice plan create   --name webqueue-plan   --resource-group webqueue-demo-rg   --sku B1   --is-linux
+az appservice plan create \
+  --name webqueue-plan \
+  --resource-group webqueue-demo-rg \
+  --sku B1 \
+  --is-linux
 
 WEB_APP=webqueueapp$RANDOM
 
-az webapp create   --resource-group webqueue-demo-rg   --plan webqueue-plan   --name $WEB_APP   --runtime "NODE|18-lts"
+az webapp create \
+  --resource-group webqueue-demo-rg \
+  --plan webqueue-plan \
+  --name $WEB_APP \
+  --runtime "NODE|18-lts"
 
-az webapp config appsettings set   --resource-group webqueue-demo-rg   --name $WEB_APP   --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING"
+az webapp config appsettings set \
+  --resource-group webqueue-demo-rg \
+  --name $WEB_APP \
+  --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING"
 ```
 
 #### 🚀 Deploy via Git (Manual Setup)
@@ -131,7 +142,7 @@ git push azure main:master
 ```bash
 func init workerfunc --javascript
 cd workerfunc
-func new
+func new --name ProcessTask --template "Azure Queue Storage trigger" --language JavaScript
 ```
 
 Choose:
@@ -140,28 +151,19 @@ Choose:
 - Queue name: `taskqueue`
 - Storage connection: `AzureWebJobsStorage`
 
-#### ✍️ Edit `ProcessTask/index.js`
+#### ✍️ Edit `src/functions/ProcessTask.js
 
 ```javascript
-module.exports = async function (context, myQueueItem) {
-    context.log(`✅ Processing task: ${myQueueItem}`);
-};
-```
+const { app } = require('@azure/functions');
 
-Check `function.json` for correctness:
-
-```json
-{
-  "bindings": [
-    {
-      "name": "myQueueItem",
-      "type": "queueTrigger",
-      "direction": "in",
-      "queueName": "taskqueue",
-      "connection": "AzureWebJobsStorage"
+app.storageQueue('ProcessTask', {
+    queueName: 'taskqueue', // <-- match your queue name
+    connection: 'AzureWebJobsStorage', // <-- use your storage connection setting
+    handler: (queueItem, context) => {
+        context.log('✅ Processing task:', queueItem);
     }
-  ]
-}
+});
+
 ```
 
 ---
@@ -169,8 +171,17 @@ Check `function.json` for correctness:
 #### 🚀 Deploy Node.js Function App
 
 ```bash
-az functionapp create   --resource-group webqueue-demo-rg   --consumption-plan-location australiaeast   --runtime node   --runtime-version 18   --functions-version 4   --name workerfunc123   --storage-account $STORAGE_QUEUE   --os-type Linux
+# Create Function App
+az functionapp create \
+  --resource-group webqueue-demo-rg \
+  --consumption-plan-location australiaeast \
+  --runtime node \
+  --runtime-version 20 \
+  --functions-version 4 \
+  --name workerfunc123 \
+  --storage-account $STORAGE_QUEUE
 
+# Deploy the NodeJS app
 func azure functionapp publish workerfunc123
 ```
 
