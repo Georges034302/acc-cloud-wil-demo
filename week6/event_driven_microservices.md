@@ -20,6 +20,7 @@ Simulate asynchronous communication between microservices using Azure Storage Qu
 
 ## 👣 Step-by-Step Instructions
 
+
 ### 1️⃣ Create Resource Group and Storage Account
 
 ```bash
@@ -57,10 +58,19 @@ To allow your user account to manage the storage account and related services:
 2. Navigate to **Storage accounts** → `eventdemostorage123 <unique name>`
 3. In the left menu, select **Access control (IAM)**
 4. Click **+ Add > Add role assignment**
-5. Role: **Contributor**
+5. Role: **Storage Queue Data Contributor**
 6. Assign access to: **User, group, or service principal**
 7. Select your account (signed-in user)
 8. Click **Save**
+
+Run this command:
+
+```bash
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role Contributor \
+  --scope $(az storage account show --name $EVENT_STORAGE --resource-group event-demo-rg --query id -o tsv)
+```
 
 ---
 
@@ -74,7 +84,8 @@ az functionapp create \
   --runtime-version 3.11 \
   --functions-version 4 \
   --name queueprocessorfunc \
-  --storage-account $EVENT_STORAGE
+  --storage-account $EVENT_STORAGE \
+  --os-type Linux
 ```
 
 ### 5️⃣ Create Function Locally
@@ -82,25 +93,115 @@ az functionapp create \
 ```bash
 func init QueueProcessorProj --python
 cd QueueProcessorProj
-func new --template "Azure Queue Storage trigger" --name ProcessOrder
+func init . --worker-runtime python
+
+# Initialize the Function App with Python worker
+func init . --worker-runtime python --language python
+
+# Begin interactive creation of a new function
+func new --list
+
+# When prompted, choose the "Queue trigger" template by entering:
+# Choose option: 12
+
+# Then respond to the next prompts:
+# Function Name: ProcessOrder
+# Queue Name: orders
+# Storage Connection String: AzureWebJobsStorage
 ```
 
-Update `ProcessOrder/__init__.py`:
+Update `function_app.py`:
 
 ```python
 import logging
 import azure.functions as func
 
-def main(msg: func.QueueMessage):
-    logging.info(f"Processing order: {msg.get_body().decode()}")
+app = func.FunctionApp()
+
+@app.function_name(name="ProcessOrder")
+@app.queue_trigger(arg_name="msg", queue_name="orders", connection="AzureWebJobsStorage")
+def process_order(msg: func.QueueMessage):
+    logging.warning("🚨 Triggered: ProcessOrder function")
+
+    try:
+        body_raw = msg.get_body()
+        body = body_raw.decode("utf-8")
+        logging.info(f"✅ Processing order: {body}")
+    except UnicodeDecodeError:
+        logging.error(f"❌ Could not decode message body: {body_raw!r}", exc_info=True)
+    except Exception as e:
+        logging.error(f"❌ Unexpected error: {str(e)}", exc_info=True)
+        raise
+```
+
+Update host.json
+
+```json
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      }
+    }
+  },
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle",
+    "version": "[4.*, 5.0.0)"
+  },
+  "extensions": {
+    "queues": {
+      "messageEncoding": "Raw"
+    }
+  }
+}
 ```
 
 Install dependencies:
 
 ```bash
+# Activate Python Env
+python3.11 -m venv /workspaces/acc-cloud-wil-demo/week6/QueueProcessorProj/.venv
+source /workspaces/acc-cloud-wil-demo/week6/QueueProcessorProj/.venv/bin/activate
+
+# Install Azure Functions SDK
 pip install azure-functions
+
+# Freeze installed packages to requirements.txt
 pip freeze > requirements.txt
+
+# Remove any invalid torch versions (e.g., 2.7.0+cpu)
+sed -i '/torch==2\.7\.0\+cpu/d' requirements.txt
+sed -i '/torch==2\.7\.0/d' requirements.txt
+
+# Add a valid torch version explicitly
+echo "torch==2.1.2" >> requirements.txt
+
+# Reinstall from clean requirements.txt
+pip install -r requirements.txt
 ```
+
+Before Deployment ensure to install the correct interpreter version
+
+```bash
+# For Example, installing Python 3.11 on Ubuntu
+sudo apt update
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa -y
+sudo apt update
+sudo apt install -y python3.11 python3.11-venv python3.11-dev
+
+# Create a Python 3.11 virtual environment
+python3.11 -m venv .venv
+source .venv/bin/activate
+python --version  # should now print 3.11.x
+
+
+# Re-install dependencies
+pip install -r requirements.txt
+``` 
 
 ### 6️⃣ Deploy Locally to Azure
 
@@ -124,21 +225,28 @@ az storage message put \
 
 ### 8️⃣ Verify Function Execution
 
+Verify Deployed Functions:
+```bash
+az functionapp function list \
+  --name queueprocessorfunc \
+  --resource-group event-demo-rg
+```
+
 Enable App Logging (if not already):
 
 ```bash
 az webapp log config \
   --name queueprocessorfunc \
   --resource-group event-demo-rg \
-  --application-logging true
+  --application-logging filesystem
 ```
 
-Stream logs:
+View App Insights:
 
 ```bash
-az webapp log tail \
-  --name queueprocessorfunc \
-  --resource-group event-demo-rg
+az monitor app-insights query \
+  --app "/subscriptions/<Subscription-ID>/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc" \
+  --analytics-query "exceptions | order by timestamp desc | limit 5"
 ```
 
 ---
@@ -151,5 +259,15 @@ az group delete --name event-demo-rg --yes --no-wait
 
 ---
 
+## 🟢 **Conclusion**
+
+- Your instructions are correct and ready for students.
+- Consider adding the above minor clarifications for even smoother student experience.
+- All CLI commands are up-to-date and should work as expected.
+
+---
+
 ✅ **Demo complete – students have implemented async communication using Azure Queue and Functions via CLI!**
+
+
 

@@ -46,3 +46,13 @@ __pycache__/
 __blobstorage__
 __queuestorage__
 __azurite_db*__.json
+
+.vscode
+.vscode-test
+.history
+
+# Azure Functions artifacts
+bin/
+obj/    
+# Azure Functions local settings
+local.settings.json
