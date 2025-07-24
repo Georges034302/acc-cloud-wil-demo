@@ -169,6 +169,7 @@ source /workspaces/acc-cloud-wil-demo/week6/QueueProcessorProj/.venv/bin/activat
 
 # Install Azure Functions SDK
 pip install azure-functions
+# Use azure-functions==1.18.0
 
 # Freeze installed packages to requirements.txt
 pip freeze > requirements.txt
@@ -250,6 +251,22 @@ SUB_ID=$(az account show --query id --output tsv)
 az monitor app-insights query \
   --app "/subscriptions/$SUB_ID/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc" \
   --analytics-query "exceptions | order by timestamp desc | limit 5"
+
+az monitor app-insights query \
+  --app "/subscriptions/$SUB_ID/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc" \
+  --analytics-query "exceptions | order by timestamp desc | limit 5"
+
+
+APP_INSIGHTS_ID="/subscriptions/$SUB_ID/resourceGroups/event-demo-rg/providers/microsoft.insights/components/queueprocessorfunc"
+
+az monitor app-insights query \
+  --app "$APP_INSIGHTS_ID" \
+  --analytics-query "traces
+  | where timestamp > ago(30m)
+  | where message has 'Order #101'
+  | project timestamp, message
+  | order by timestamp desc"
+
 ```
 
 ---
