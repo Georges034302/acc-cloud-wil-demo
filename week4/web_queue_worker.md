@@ -112,7 +112,7 @@ az webapp create \
   --resource-group webqueue-demo-rg \
   --plan webqueue-plan \
   --name $WEB_APP \
-  --runtime "NODE|18-lts"
+  --runtime "NODE|20-lts"
 
 az webapp config appsettings set \
   --resource-group webqueue-demo-rg \
@@ -144,12 +144,6 @@ func init workerfunc --javascript
 cd workerfunc
 func new --name ProcessTask --template "Azure Queue Storage trigger" --language JavaScript
 ```
-
-Choose:
-- Template: `Queue trigger`
-- Function name: `ProcessTask`
-- Queue name: `taskqueue`
-- Storage connection: `AzureWebJobsStorage`
 
 #### ✍️ Edit `src/functions/ProcessTask.js
 
