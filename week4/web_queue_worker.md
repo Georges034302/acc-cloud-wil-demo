@@ -48,18 +48,31 @@ Implement a decoupled Web-Queue-Worker pattern using:
 ### 1️⃣ Setup Resource Group and Storage Queue
 
 ```bash
-az group create --name webqueue-demo-rg --location australiaeast
-```
-#### 🗃️ Create a Queue in Storage
+# Create resource group
+az group create \
+  --name webqueue-demo-rg \
+  --location australiaeast
 
-```bash
-STORAGE_QUEUE=webqueuestorage$RANDOM 
+# Create storage account
+STORAGE_QUEUE=webqueuestorage$RANDOM
 
 az storage account create \
   --name $STORAGE_QUEUE \
   --resource-group webqueue-demo-rg \
   --location australiaeast \
   --sku Standard_LRS
+
+# Get connection string
+STORAGE_CONN_STRING=$(az storage account show-connection-string \
+  --name $STORAGE_QUEUE \
+  --resource-group webqueue-demo-rg \
+  --query connectionString \
+  --output tsv)
+
+# Create queue
+az storage queue create \
+  --account-name $STORAGE_QUEUE \
+  --name taskqueue
 ```
 
 #### 🔗 Get connection string:
