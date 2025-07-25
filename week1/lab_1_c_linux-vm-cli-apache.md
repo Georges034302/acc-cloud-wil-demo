@@ -66,6 +66,30 @@ curl http://localhost
 ```
 Or, open `http://<public-ip>` in your browser.
 
+### 9️⃣ Upload a Custom index.html and Reload the Page
+
+- On your local machine, create a simple `index.html` file (or use your own).
+- Upload it to your VM using `scp`:
+
+```bash
+scp index.html azureuser@<public-ip>:~/
+```
+*(Replace `<public-ip>` with your VM's public IP address.)*
+
+- SSH into your VM if not already connected:
+
+```bash
+ssh azureuser@<public-ip>
+```
+
+- Move the file to the Apache web root:
+
+```bash
+sudo mv ~/index.html /var/www/html/index.html
+```
+
+- Now, reload `http://<public-ip>` in your browser to see your custom page.
+
 ---
 
 ✅ **You have successfully created a Linux VM, connected via SSH, and installed Apache!**
