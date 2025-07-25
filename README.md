@@ -10,46 +10,46 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   Learn how to provision and configure Azure Virtual Machines using the Azure Portal, CLI, and ARM templates.
 
   **Labs for this week:**
-  - [windows-vm-portal.md](week1/windows-vm-portal.md):  
+  - [lab_1_a_windows-vm-portal.md](week1/lab_1_a_windows-vm-portal.md):  
     *Create a Windows VM using the Azure Portal and connect to it via RDP.*
-  - [linux-vm-cli-apache.md](week1/linux-vm-cli-apache.md):  
+  - [lab_1_b_linux-vm-arm-nsg.md](week1/lab_1_b_linux-vm-arm-nsg.md):  
+    *Deploy a Linux VM using an ARM template with NSG rules for SSH, HTTP, and HTTPS.*
+  - [lab_1_c_linux-vm-cli-apache.md](week1/lab_1_c_linux-vm-cli-apache.md):  
     *Deploy a Linux VM using Azure CLI, SSH into it, and install Apache HTTP server.*
-  - [linux-vm-arm-nsg.md](week1/linux-vm-arm-nsg.md):  
-    *Deploy a Linux VM using an ARM template, attach a Network Security Group (NSG) to the NIC, and configure rules for SSH, HTTP, and HTTPS.*
+  - [vm-setup.md](week1/vm-setup.md):  
+    *General VM setup guide and project upload instructions.*
 
 </details>
 
 <details>
   <summary>Week 2: Securing Access to Azure Blob Storage</summary>
 
-  Learn how to securely manage access to Azure Blob Storage using role-based access control (RBAC), shared access signatures (SAS), and storage account keys.
+  Learn how to securely manage access to Azure Blob Storage using authentication, RBAC, and SAS.
 
   **Labs for this week:**
-  - [blob-rbac-cli.md](week2/blob-rbac-cli.md):  
+  - [lab_2_a_authentication-blob.md](week2/lab_2_a_authentication-blob.md):  
+    *Authenticate and access Azure Blob Storage securely.*
+  - [lab_2_b_rbac-blob.md](week2/lab_2_b_rbac-blob.md):  
     *Grant and test RBAC roles for Blob Storage using Azure CLI.*
-  - [blob-sas-cli.md](week2/blob-sas-cli.md):  
+  - [lab_2_c_sas-blob.md](week2/lab_2_c_sas-blob.md):  
     *Generate and use Shared Access Signatures (SAS) for delegated access to blobs.*
-  - [blob-key-management.md](week2/blob-key-management.md):  
-    *Rotate and manage storage account keys securely with scripts.*
 
 </details>
 
 <details>
-  <summary>Week 3: Azure Networking</summary>
+  <summary>Week 3: Azure Databases & Networking</summary>
 
-  Explore Azure networking fundamentals and best practices.
+  Explore Azure networking and database fundamentals.
 
   **Labs for this week:**
-  - [vnet-basic.md](week3/vnet-basic.md):  
-    *Create and configure a virtual network and subnets.*
-  - [nsg-rules.md](week3/nsg-rules.md):  
+  - [lab_3_a_networking_nsg.md](week3/lab_3_a_networking_nsg.md):  
     *Deploy and test Network Security Groups and custom rules.*
-  - [vnet-peering.md](week3/vnet-peering.md):  
+  - [lab_3_b_azure_sql.md](week3/lab_3_b_azure_sql.md):  
+    *Provision and connect to Azure SQL Database.*
+  - [lab_3_c_cosmos_nosql.md](week3/lab_3_c_cosmos_nosql.md):  
+    *Deploy and interact with Azure Cosmos DB (NoSQL).*
+  - [lab_3_d_vnet_peering.md](week3/lab_3_d_vnet_peering.md):  
     *Set up VNet peering and test connectivity between VNets.*
-  - [vpn-gateway-demo.md](week3/vpn-gateway-demo.md):  
-    *Deploy a VPN Gateway and connect two VNets securely.*
-  - [private-endpoint-demo.md](week3/private-endpoint-demo.md):  
-    *Configure a Private Endpoint for secure access to Azure resources.*
 
 </details>
 
@@ -59,46 +59,42 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   Learn how to design and deploy decoupled applications using Azure services.
 
   **Labs for this week:**
-  - [web_queue_worker.md](week4/web_queue_worker.md):  
+  - [lab_4_a_appservice_webapp.md](week4/lab_4_a_appservice_webapp.md):  
+    *Deploy a web application using Azure App Service.*
+  - [lab_4_b_microservice_deployment.md](week4/lab_4_b_microservice_deployment.md):  
+    *Deploy and manage microservices on Azure.*
+  - [lab_4_c_web_queue_worker.md](week4/lab_4_c_web_queue_worker.md):  
     *Implement the Web-Queue-Worker pattern using App Service, Storage Queue, and Azure Functions.*
-  - [event-grid-demo.md](week4/event-grid-demo.md):  
-    *Build an event-driven workflow using Azure Event Grid and Functions.*
-  - [service-bus-demo.md](week4/service-bus-demo.md):  
-    *Integrate Azure Service Bus for advanced messaging scenarios.*
 
 </details>
 
 <details>
-  <summary>Week 5: Azure Container Apps</summary>
+  <summary>Week 5: Containers & App Service Integration</summary>
 
-  Deploy and manage containerized applications with Azure Container Apps.
+  Deploy and manage containerized applications and integrate with Azure App Service.
 
   **Labs for this week:**
-  - [container-apps-quickstart.md](week5/container-apps-quickstart.md):  
-    *Deploy your first container app and expose it to the internet.*
-  - [container-apps-scale.md](week5/container-apps-scale.md):  
-    *Configure scaling rules and test auto-scaling for container apps.*
-  - [container-apps-secrets.md](week5/container-apps-secrets.md):  
-    *Manage secrets and environment variables in Azure Container Apps.*
-  - [container-apps-dapr.md](week5/container-apps-dapr.md):  
-    *Integrate Dapr for building microservices with Azure Container Apps.*
+  - [lab_5_a_local-docker-joke-api-demo.md](week5/lab_5_a_local-docker-joke-api-demo.md):  
+    *Build and run a Dockerized API locally.*
+  - [lab_5_b_app_service_container.md](week5/lab_5_b_app_service_container.md):  
+    *Deploy a containerized app using Azure App Service.*
+  - [lab_5_c_secure-appservice-keyvault-demo.md](week5/lab_5_c_secure-appservice-keyvault-demo.md):  
+    *Secure App Service apps with Azure Key Vault integration.*
 
 </details>
 
 <details>
-  <summary>Week 6: Serverless Computing with Azure Functions</summary>
+  <summary>Week 6: Serverless & Event-Driven Architectures</summary>
 
-  Implement serverless solutions using Azure Functions and related services.
+  Implement serverless and event-driven solutions using Azure Functions, Logic Apps, and AKS.
 
   **Labs for this week:**
-  - [function-http-trigger.md](week6/function-http-trigger.md):  
-    *Create and deploy an HTTP-triggered Azure Function.*
-  - [function-timer-trigger.md](week6/function-timer-trigger.md):  
-    *Schedule background jobs using Timer-triggered Azure Functions.*
-  - [logicapp_email_to_blob.md](week6/logicapp_email_to_blob.md):  
-    *Automate email attachment uploads to Blob Storage using Logic Apps and Functions.*
-  - [durable-functions-demo.md](week6/durable-functions-demo.md):  
-    *Orchestrate complex workflows using Durable Functions.*
+  - [lab_6_a_aks_scalable_app.md](week6/lab_6_a_aks_scalable_app.md):  
+    *Deploy and scale applications on Azure Kubernetes Service (AKS).*
+  - [lab_6_b_azure_function_node_app.md](week6/lab_6_b_azure_function_node_app.md):  
+    *Create and deploy a Node.js Azure Function app.*
+  - [lab_6_c__email_to_sms_function.md](week6/lab_6_c_email_to_sms_function.md):  
+    *Automate email processing and queue integration using Logic Apps and Functions.*
 
 </details>
 
