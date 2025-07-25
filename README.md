@@ -7,67 +7,84 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 <details>
   <summary>Week 1: Shell Scripts and VM Setup</summary>
 
-  Learn how to provision and configure Azure Virtual Machines using shell scripts.  
-  Key topics include:
-  - Setting up environment variables for Azure resources
-  - Creating and configuring resource groups, virtual networks, and VMs
-  - Managing network security groups and firewall rules
-  - Connecting to your VM via SSH
-  - Uploading project files to your VM
+  Learn how to provision and configure Azure Virtual Machines using the Azure Portal, CLI, and ARM templates.
+
+  **Labs for this week:**
+  - [windows-vm-portal.md](week1/windows-vm-portal.md):  
+    *Create a Windows VM using the Azure Portal and connect to it via RDP.*
+  - [linux-vm-cli-apache.md](week1/linux-vm-cli-apache.md):  
+    *Deploy a Linux VM using Azure CLI, SSH into it, and install Apache HTTP server.*
+  - [linux-vm-arm-nsg.md](week1/linux-vm-arm-nsg.md):  
+    *Deploy a Linux VM using an ARM template, attach a Network Security Group (NSG) to the NIC, and configure rules for SSH, HTTP, and HTTPS.*
+
 </details>
 
 <details>
   <summary>Week 2: Securing Access to Azure Blob Storage</summary>
 
-  Azure Blob Storage is a scalable object storage solution for the cloud. In Week 2, you will learn how to securely manage access to Azure Blob Storage using role-based access control (RBAC), shared access signatures (SAS), and storage account keys. This week focuses on best practices for protecting your data and controlling who can access your storage resources.
+  Learn how to securely manage access to Azure Blob Storage using role-based access control (RBAC), shared access signatures (SAS), and storage account keys.
 
-  Key topics include:
-  - Understanding Azure Storage accounts and Blob containers
-  - Assigning RBAC roles for granular access control
-  - Creating and using Shared Access Signatures (SAS) for delegated access
-  - Managing storage account keys securely
-  - Using Azure CLI and scripts to automate storage security tasks
+  **Labs for this week:**
+  - [blob-rbac-cli.md](week2/blob-rbac-cli.md):  
+    *Grant and test RBAC roles for Blob Storage using Azure CLI.*
+  - [blob-sas-cli.md](week2/blob-sas-cli.md):  
+    *Generate and use Shared Access Signatures (SAS) for delegated access to blobs.*
+  - [blob-key-management.md](week2/blob-key-management.md):  
+    *Rotate and manage storage account keys securely with scripts.*
+
 </details>
 
 <details>
   <summary>Week 3: Azure Networking</summary>
 
-  Explore Azure networking fundamentals and best practices.  
-  Key topics include:
-  - Virtual networks and subnets
-  - Network security groups and rules
-  - Public and private IP addressing
-  - Peering and hybrid connectivity
+  Explore Azure networking fundamentals and best practices.
+
+  **Labs for this week:**
+  - [vnet-basic.md](week3/vnet-basic.md):  
+    *Create and configure a virtual network and subnets.*
+  - [nsg-rules.md](week3/nsg-rules.md):  
+    *Deploy and test Network Security Groups and custom rules.*
+  - [vnet-peering.md](week3/vnet-peering.md):  
+    *Set up VNet peering and test connectivity between VNets.*
+
 </details>
 
 <details>
   <summary>Week 4: Building Decoupled Applications</summary>
 
-  Learn how to design and deploy decoupled applications using Azure services.  
-  Key topics include:
-  - Event-driven architectures
-  - Messaging and queueing with Azure services
-  - Decoupling components for scalability and reliability
+  Learn how to design and deploy decoupled applications using Azure services.
+
+  **Labs for this week:**
+  - [web_queue_worker.md](week4/web_queue_worker.md):  
+    *Implement the Web-Queue-Worker pattern using App Service, Storage Queue, and Azure Functions.*
+  - [event-grid-demo.md](week4/event-grid-demo.md):  
+    *Build an event-driven workflow using Azure Event Grid and Functions.*
+
 </details>
 
 <details>
   <summary>Week 5: Azure Container Apps</summary>
 
-  Deploy and manage containerized applications with Azure Container Apps.  
-  Key topics include:
-  - Building and deploying containers
-  - Managing container lifecycles
-  - Scaling and securing containerized workloads
+  Deploy and manage containerized applications with Azure Container Apps.
+
+  **Labs for this week:**
+  - [container-apps-quickstart.md](week5/container-apps-quickstart.md):  
+    *Deploy your first container app and expose it to the internet.*
+  - [container-apps-scale.md](week5/container-apps-scale.md):  
+    *Configure scaling rules and test auto-scaling for container apps.*
+
 </details>
 
 <details>
   <summary>Week 6: Serverless Computing with Azure Functions</summary>
 
-  Implement serverless solutions using Azure Functions and related services.  
-  Key topics include:
-  - Creating and deploying Azure Functions
-  - Integrating with other Azure services
-  - Event-driven and scheduled function execution
+  Implement serverless solutions using Azure Functions and related services.
+
+  **Labs for this week:**
+  - [function-http-trigger.md](week6/function-http-trigger.md):  
+    *Create and deploy an HTTP-triggered Azure Function.*
+  - [logicapp_email_to_blob.md](week6/logicapp_email_to_blob.md):  
+    *Automate email attachment uploads to Blob Storage using Logic Apps and Functions.*
 </details>
 
 ---
