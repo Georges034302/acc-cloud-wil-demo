@@ -1,4 +1,4 @@
-# 🔐 Demo 3 Guide: Secure App Settings in App Service with Azure Key Vault
+# 🔐 Demo Guide: Secure App Settings in App Service with Azure Key Vault
 
 ## 🎯 Objective
 

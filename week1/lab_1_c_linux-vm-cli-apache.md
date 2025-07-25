@@ -1,4 +1,4 @@
-# Lab 1b: Create a Linux VM from CLI, SSH into It, and Install Apache HTTP Server
+# Demo Guide: Create a Linux VM from CLI, SSH into It, and Install Apache HTTP Server
 
 ## 🎯 Objective
 Provision a Linux Virtual Machine using Azure CLI, connect via SSH, and install Apache HTTP server.

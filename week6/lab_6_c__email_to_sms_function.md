@@ -1,242 +1,262 @@
-# 🔁 Demo 4 Guide: Automate Email to Blob Upload with Azure Logic App
+
+# Demo Guide: Real-Time Email to SMS Notification Using Microsoft Graph and Azure Function
 
 ## 🎯 Objective
-Create an Azure Logic App that monitors an email inbox for incoming messages with attachments and saves those attachments to a Blob Storage container using **Portal**, **CLI**, and **ARM**.
+In this lab, you'll build an event-driven system using a Node.js Azure Function that listens for new emails via a Microsoft Graph webhook and sends an SMS alert using Twilio with the sender and subject of the email.
 
 ---
 
 ## 🧭 Prerequisites
-- Azure subscription
-- Office 365 or Outlook.com email account
+
+- Azure Subscription
+- Office 365 Mailbox (with API access)
 - Azure CLI installed
-- Permissions to assign roles
+- Node.js (v16+) and Azure Functions Core Tools
+- Twilio Account and Verified Phone Number
+- [ngrok](https://ngrok.com/) installed (for local testing)
+- Admin permissions to register an Azure AD App
 
 ---
 
-## 👣 Step-by-Step Instructions (Portal + CLI + ARM)
+## 🛠️ Architecture Overview
 
-### 1️⃣ Create Resource Group and Storage Account
+```
+📧 Office 365 Mailbox
+    ↓ (new email)
+🔔 Microsoft Graph Subscription (Webhook)
+    ↓
+🟦 Azure Function (Node.js)
+    ↓
+📲 Twilio API → Sends SMS
+```
 
-🔸 **CLI:**
+---
+
+## 👣 Step-by-Step Instructions
+
+### 1️⃣ Create Azure Resources
+
 ```bash
-az group create --name logicapp-rg --location australiaeast
+az group create --name lab4-rg --location australiaeast
 
-STORAGE_ACCOUNT=emailstorage$RANDOM
+STORAGE_NAME=lab4storage$RANDOM
+FUNC_APP=lab4func$RANDOM
 
 az storage account create \
-  --name $STORAGE_ACCOUNT \
-  --resource-group logicapp-rg \
+  --name $STORAGE_NAME \
   --location australiaeast \
+  --resource-group lab4-rg \
   --sku Standard_LRS
 
-az storage container create \
-  --account-name $STORAGE_ACCOUNT \
-  --name attachments \
-  --auth-mode login
+az functionapp create \
+  --resource-group lab4-rg \
+  --consumption-plan-location australiaeast \
+  --name $FUNC_APP \
+  --storage-account $STORAGE_NAME \
+  --runtime node \
+  --functions-version 4
 ```
-
-🔸 **Portal:**
-1. Go to **Storage accounts** → **+ Create**
-2. Resource Group: `logicapp-rg`
-3. Storage account name: `emailblobsa123`
-4. Region: Australia East → **Review + Create**
-5. Navigate to storage account → **Containers** → **+ Container**
-6. Name: `attachments`, Access level: Private → **Create**
 
 ---
 
-### 2️⃣ Create Logic App
+### 2️⃣ Initialize Node.js Azure Function Locally
 
-🔸 **CLI:**
 ```bash
-az logic workflow create \
-  --resource-group logicapp-rg \
-  --name email-to-blob \
-  --location australiaeast \
-  --definition "@logicapp-definition.json" \
-  --identity-type SystemAssigned
+func init lab4-email-func --javascript
+cd lab4-email-func
+func new --name EmailWebhook --template "HTTP trigger" --authlevel "anonymous"
 ```
-
-> You’ll define `logicapp-definition.json` in step 4.
-
-🔸 **Portal:**
-1. Go to **Logic Apps** → **+ Create**
-2. Resource Group: `logicapp-rg`
-3. Name: `email-to-blob`
-4. Region: Australia East
-5. Plan Type: **Consumption**
-6. Enable **System Assigned Identity**
-7. Click **Review + Create**
 
 ---
 
-### 3️⃣ Grant Logic App Access to Blob Storage
+### 3️⃣ Implement EmailWebhook Logic
 
-🔸 **CLI:**
-```bash
-LOGIC_ID=$(az logic workflow show \
-  --name email-to-blob \
-  --resource-group logicapp-rg \
-  --query identity.principalId --output tsv)
+Replace `EmailWebhook/index.js` with:
 
-STORAGE_ID=$(az storage account show \
-  --name $STORAGE_ACCOUNT \
-  --resource-group logicapp-rg \
-  --query id --output tsv)
+```javascript
+const twilio = require('twilio');
+const axios = require('axios');
 
-az role assignment create \
-  --assignee $LOGIC_ID \
-  --role "Storage Blob Data Contributor" \
-  --scope $STORAGE_ID
+module.exports = async function (context, req) {
+    const mode = req.query.validationToken ? "validate" : "notify";
+
+    if (mode === "validate") {
+        context.log("Validating webhook...");
+        context.res = {
+            status: 200,
+            body: req.query.validationToken,
+            headers: { 'Content-Type': 'text/plain' }
+        };
+        return;
+    }
+
+    const messageId = req.body?.value?.[0]?.resourceData?.id;
+    const tenantId = req.body?.value?.[0]?.tenantId;
+
+    if (!messageId) {
+        context.res = { status: 400, body: "No message ID received" };
+        return;
+    }
+
+    const accessToken = await getAccessToken(); // custom token acquisition method
+    const msgRes = await axios.get(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const sender = msgRes.data?.from?.emailAddress?.address || "Unknown";
+    const subject = msgRes.data?.subject || "(No Subject)";
+
+    try {
+        const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
+        await client.messages.create({
+            body: `📧 Email from ${sender}: ${subject}`,
+            from: process.env.TWILIO_PHONE,
+            to: process.env.RECIPIENT_PHONE
+        });
+
+        context.res = { status: 200, body: "SMS sent." };
+    } catch (err) {
+        context.res = { status: 500, body: "SMS failed: " + err.message };
+    }
+};
 ```
 
-🔸 **Portal:**
-1. Go to **Logic App** → **Identity** → Enable System Assigned → Copy Object ID
-2. Go to **Storage Account** → **Access Control (IAM)** → **+ Add** → **Add Role Assignment**
-3. Role: `Storage Blob Data Contributor` → Next
-4. Select members → paste Logic App Object ID → Select → Next → **Review + Assign**
+Update `function.json`:
 
----
-
-### 4️⃣ Define Logic App Workflow
-
-🔸 **Portal:**
-1. Open Logic App → Designer → **Blank Logic App**
-2. Add trigger: `When a new email arrives (V3)` (Office 365 Outlook or Outlook.com)
-3. Sign in → Folder: `Inbox`, Only with Attachments: `Yes`
-4. Add action: **Apply to each** → `Attachments`
-5. Inside loop:
-   - Add action: **Create blob** (Azure Blob Storage)
-   - Sign in → Container: `attachments`
-   - Blob name: `Name` (dynamic)
-   - Blob content: `ContentBytes` (dynamic)
-
-🔸 **ARM JSON** (save as `logicapp-definition.json`):
 ```json
 {
-  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
-  "resources": [
+  "bindings": [
     {
-      "type": "Microsoft.Logic/workflows",
-      "apiVersion": "2019-05-01",
-      "name": "email-to-blob",
-      "location": "australiaeast",
-      "properties": {
-        "definition": {
-          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-          "contentVersion": "1.0.0.0",
-          "parameters": {
-            "$connections": {
-              "defaultValue": {},
-              "type": "Object"
-            }
-          },
-          "triggers": {
-            "When_a_new_email_arrives_(V3)": {
-              "type": "ApiConnectionNotification",
-              "inputs": {
-                "host": {
-                  "connection": {
-                    "name": "@parameters('$connections')['office365']['connectionId']"
-                  }
-                },
-                "method": "get",
-                "path": "/v3/Mail/OnNewEmail",
-                "queries": {
-                  "importance": "Any",
-                  "fetchOnlyWithAttachment": true,
-                  "includeAttachments": true,
-                  "folderPath": "Inbox"
-                }
-              },
-              "splitOn": "@triggerBody()?['value']"
-            }
-          },
-          "actions": {
-            "For_each": {
-              "foreach": "@triggerBody()?['attachments']",
-              "actions": {
-                "Create_blob_(V2)": {
-                  "type": "ApiConnection",
-                  "inputs": {
-                    "host": {
-                      "connection": {
-                        "name": "@parameters('$connections')['azureblob']['connectionId']"
-                      }
-                    },
-                    "method": "post",
-                    "path": "/v2/datasets/@{encodeURIComponent(encodeURIComponent('attachments'))}/files",
-                    "body": "@base64ToBinary(item()?['contentBytes'])",
-                    "queries": {
-                      "folderPath": "/attachments",
-                      "name": "@items('For_each')?['name']",
-                      "queryParametersSingleEncoded": true
-                    }
-                  },
-                  "runtimeConfiguration": {
-                    "contentTransfer": {
-                      "transferMode": "Chunked"
-                    }
-                  }
-                }
-              },
-              "runAfter": {},
-              "type": "Foreach"
-            }
-          },
-          "outputs": {},
-          "parameters": {
-            "$connections": {
-              "type": "Object",
-              "defaultValue": {}
-            }
-          }
-        },
-        "parameters": {
-          "$connections": {
-            "type": "Object",
-            "value": {
-              "office365": {
-                "id": "/subscriptions/127b5e15-2241-478b-b9a7-5b5ce4ca7dbb/providers/Microsoft.Web/locations/australiaeast/managedApis/office365",
-                "connectionId": "/subscriptions/127b5e15-2241-478b-b9a7-5b5ce4ca7dbb/resourceGroups/logicapp-rg2/providers/Microsoft.Web/connections/office365",
-                "connectionName": "office365"
-              }
-            }
-          }
-        }
-      }
+      "authLevel": "anonymous",
+      "type": "httpTrigger",
+      "direction": "in",
+      "name": "req",
+      "methods": ["post", "get"]
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "res"
     }
   ]
 }
 ```
 
-🔸 **ARM Deployment Instructions:**
-1. Save the above JSON to a file named `logicapp-definition.json`
-2. Run the following CLI command:
-```bash
-az deployment group create \
-  --resource-group logicapp-rg \
-  --template-file logicapp-definition.json \
-  --parameters '{"$connections": {"value": {}}}'
-```
+---
 
-> 💡 Note: You may need to authorize connectors in the Portal after deployment.
+### 4️⃣ Install Dependencies
+
+```bash
+npm install twilio axios
+```
 
 ---
 
-### 5️⃣ Test Logic App
-1. Send email with a file attachment to connected mailbox
-2. Wait ~1 min or manually run Logic App
-3. Open **Storage Account** → **Containers** → `attachments`
-4. ✅ File appears in the container
+### 5️⃣ Set Environment Variables
+
+```bash
+az functionapp config appsettings set \
+  --name $FUNC_APP \
+  --resource-group lab4-rg \
+  --settings \
+  TWILIO_SID=<your_twilio_sid> \
+  TWILIO_AUTH_TOKEN=<your_twilio_token> \
+  TWILIO_PHONE=<twilio_number> \
+  RECIPIENT_PHONE=<destination_number>
+```
 
 ---
 
-### 6️⃣ Clean Up
+### 6️⃣ Run Function Locally for Testing
+
 ```bash
-az group delete --name logicapp-rg --yes --no-wait
+func start
 ```
 
-✅ **Demo complete – Logic App reads new emails with attachments and saves them to Blob Storage. All steps covered with Portal, CLI, and ARM.**
+Expose it with `ngrok`:
 
+```bash
+ngrok http 7071
+```
+
+Copy the generated public URL for webhook subscription.
+
+---
+
+### 7️⃣ Register Azure AD App for Graph API
+
+1. Go to [Azure Portal → Azure AD → App Registrations → + New Registration](https://portal.azure.com/)
+2. Name: `EmailWebhookApp`
+3. Platform: Web → Redirect URI: `http://localhost` (for testing)
+4. After creation:
+   - Go to **Certificates & Secrets** → Generate a **Client Secret**
+   - Note `Application (client) ID`, `Directory (tenant) ID`, and secret
+5. API Permissions → Microsoft Graph → Add:
+   - `Mail.Read`
+   - `MailboxSettings.Read`
+   - `offline_access`
+
+Grant admin consent for the tenant.
+
+---
+
+### 8️⃣ Create Microsoft Graph Subscription (CLI via REST)
+
+Replace placeholders and run:
+
+```bash
+ACCESS_TOKEN=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>&scope=https://graph.microsoft.com/.default" \
+  https://login.microsoftonline.com/<tenant_id>/oauth2/v2.0/token | jq -r '.access_token')
+
+curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changeType": "created",
+    "notificationUrl": "https://<your_ngrok_url>/api/EmailWebhook",
+    "resource": "me/mailFolders(\'Inbox\')/messages",
+    "expirationDateTime": "'$(date -u -d "+4230 minutes" '+%Y-%m-%dT%H:%M:%SZ')'",
+    "clientState": "secretClientValue"
+  }'
+```
+
+---
+
+### 9️⃣ Deploy to Azure Function
+
+```bash
+func azure functionapp publish $FUNC_APP
+```
+
+Once tested with `ngrok`, update `notificationUrl` to point to your Azure Function URL.
+
+---
+
+## ✅ Test
+
+1. Send an email to your Office 365 inbox
+2. Graph will POST a notification to your Azure Function
+3. Function reads email subject and sender → Sends SMS via Twilio
+4. Check recipient device for the alert!
+
+---
+
+## 🧹 Clean Up Resources
+
+```bash
+az group delete --name lab4-rg --yes --no-wait
+```
+
+---
+
+## 📌 Notes
+
+- Graph subscriptions expire after ~1 hour (max 4320 min) — use a background renewal job in production
+- Ensure Azure Function app has proper CORS config if accessed by external services
+- Use Key Vault for managing Twilio credentials securely in production
+
+---
+
+✅ **Lab Complete**  
+You have now built a fully event-driven system using Microsoft Graph and Azure Functions to trigger SMS notifications in real time when a new email arrives.

@@ -1,4 +1,4 @@
-# 🐋 Demo 2 Guide: Local Container Build, Push to ACR, and Deploy to App Service
+# 🐋 Demo Guide: Local Container Build, Push to ACR, and Deploy to App Service
 
 ## 🎯 Objective
 

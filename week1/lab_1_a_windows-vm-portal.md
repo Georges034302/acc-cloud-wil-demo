@@ -1,4 +1,4 @@
-# Lab 1a: Create a Windows VM from Azure Portal and RDP to It
+# Demo Guide: Create a Windows VM from Azure Portal and RDP to It
 
 ## 🎯 Objective
 Provision a Windows Virtual Machine using the Azure Portal and connect to it via Remote Desktop Protocol (RDP).

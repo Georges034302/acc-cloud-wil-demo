@@ -1,4 +1,4 @@
-# Lab 1c: Create a Linux VM Using ARM Template with NSG and Rules
+# Demo Guide: Create a Linux VM Using ARM Template with NSG and Rules
 
 ## 🎯 Objective
 Deploy a Linux VM using an ARM template, attach a Network Security Group (NSG) to the VM NIC, and configure rules for HTTP, HTTPS, and SSH.

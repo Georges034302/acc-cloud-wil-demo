@@ -1,5 +1,5 @@
 
-# 🐋 Demo 1 (Local Only): Build and Run a Dockerized Joke API Locally
+# 🐋 Demo Guide: Build and Run a Dockerized Joke API Locally
 
 ## 🎯 Objective
 
