@@ -1,6 +1,6 @@
 # Course Guide
 
-This guide provides a week-by-week overview of the `Advanced Cloud Computing` IATD course, focusing  Azure cloud services. Each week includes hands-on scripts, instructions, and best practices for working with Azure.
+This guide provides a week-by-week overview of the `Advanced Cloud Computing` IATD course, focusing on Azure cloud services. Each week includes hands-on scripts, instructions, and best practices for working with Azure.
 
 ---
 
@@ -46,6 +46,10 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
     *Deploy and test Network Security Groups and custom rules.*
   - [vnet-peering.md](week3/vnet-peering.md):  
     *Set up VNet peering and test connectivity between VNets.*
+  - [vpn-gateway-demo.md](week3/vpn-gateway-demo.md):  
+    *Deploy a VPN Gateway and connect two VNets securely.*
+  - [private-endpoint-demo.md](week3/private-endpoint-demo.md):  
+    *Configure a Private Endpoint for secure access to Azure resources.*
 
 </details>
 
@@ -59,6 +63,8 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
     *Implement the Web-Queue-Worker pattern using App Service, Storage Queue, and Azure Functions.*
   - [event-grid-demo.md](week4/event-grid-demo.md):  
     *Build an event-driven workflow using Azure Event Grid and Functions.*
+  - [service-bus-demo.md](week4/service-bus-demo.md):  
+    *Integrate Azure Service Bus for advanced messaging scenarios.*
 
 </details>
 
@@ -72,6 +78,10 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
     *Deploy your first container app and expose it to the internet.*
   - [container-apps-scale.md](week5/container-apps-scale.md):  
     *Configure scaling rules and test auto-scaling for container apps.*
+  - [container-apps-secrets.md](week5/container-apps-secrets.md):  
+    *Manage secrets and environment variables in Azure Container Apps.*
+  - [container-apps-dapr.md](week5/container-apps-dapr.md):  
+    *Integrate Dapr for building microservices with Azure Container Apps.*
 
 </details>
 
@@ -83,10 +93,16 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   **Labs for this week:**
   - [function-http-trigger.md](week6/function-http-trigger.md):  
     *Create and deploy an HTTP-triggered Azure Function.*
+  - [function-timer-trigger.md](week6/function-timer-trigger.md):  
+    *Schedule background jobs using Timer-triggered Azure Functions.*
   - [logicapp_email_to_blob.md](week6/logicapp_email_to_blob.md):  
     *Automate email attachment uploads to Blob Storage using Logic Apps and Functions.*
+  - [durable-functions-demo.md](week6/durable-functions-demo.md):  
+    *Orchestrate complex workflows using Durable Functions.*
+
 </details>
 
 ---
+
 #### 🧑‍🏫 Author: Georges Bou Ghantous
 <sub><i>This repository delivers hands-on Azure training, guiding learners through scripting, networking, storage security, containers, and serverless computing using real-world scenarios and best practices.</i></sub>
