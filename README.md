@@ -93,7 +93,7 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
     *Deploy and scale applications on Azure Kubernetes Service (AKS).*
   - [lab_6_b_azure_function_blob_trigger.md](week6/lab_6_b_azure_function_blob_trigger.md):  
     *Create and deploy a Node.js Azure Function app.*
-  - [lab_6_c__email_to_sms_function.md](week6/lab_6_c_email_to_sms_function.md):  
+  - [lab_6_c_email_to_sms_function.md](week6/lab_6_c_email_to_sms_function.md):  
     *Automate email processing and queue integration using Logic Apps and Functions.*
 
 </details>
