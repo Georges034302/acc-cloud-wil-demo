@@ -116,21 +116,31 @@ Create a file named `linux-vm-arm.json` with the following content:
 ## 🚀 Step 2: Deploy the Template
 
 
-Run the following commands in your terminal (replace parameters as needed):
+
+Set your variables first:
+
+```bash
+RESOURCE_GROUP=arm-vm-demo-rg
+VM_NAME=armdemo-vm
+LOCATION=australiaeast
+ADMIN_USERNAME=azureuser
+```
+
+Run the following commands:
 
 ```bash
 # Create a resource group
 az group create \
-  --name arm-vm-demo-rg \
-  --location australiaeast
+  --name $RESOURCE_GROUP \
+  --location $LOCATION
 
 # Deploy ARM template (password will be prompted securely)
 az deployment group create \
-  --resource-group arm-vm-demo-rg \
+  --resource-group $RESOURCE_GROUP \
   --template-file linux-vm-arm.json \
   --parameters \
-    vmName=armdemo-vm \
-    adminUsername=azureuser
+    vmName=$VM_NAME \
+    adminUsername=$ADMIN_USERNAME
 ```
 
 👉 At this point, Azure CLI will prompt you to enter the `adminPassword` securely. The password will not be visible or stored in your shell history.
@@ -139,29 +149,33 @@ az deployment group create \
 
 ## 🚀 Step 3: Connect to the VM
 
-1. Retrieve the public IP of your VM:
+
+1. Retrieve the public IP of your VM and store it in a variable:
 
 ```bash
-az vm show --resource-group arm-vm-demo-rg --name armdemo-vm -d --query publicIps -o tsv
+PUBLIC_IP=$(az vm show \
+  --resource-group $RESOURCE_GROUP \
+  --name $VM_NAME \
+  -d \
+  --query publicIps \
+  -o tsv)
 ```
 
 2. Connect via SSH:
 
 ```bash
-ssh azureuser@<public-ip>
+ssh $ADMIN_USERNAME@$PUBLIC_IP
 ```
-
-*(Replace `<public-ip>` with the actual IP returned above.)*
 
 ---
 
 ## 🚀 Step 4: Install Apache Web Server
 
+
 Inside the VM:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y apache2
+sudo apt-get update && sudo apt-get install -y apache2
 ```
 
 To test, open a browser and navigate to:
@@ -170,20 +184,51 @@ To test, open a browser and navigate to:
 http://<public-ip>
 ```
 
+
 You should see the **Apache2 Ubuntu Default Page**.
 
 ---
 
-## ✅ Lab Summary
+## 🚀 Step 5: Upload a Custom index.html
 
+1. On your local machine, create a simple `index.html` file, for example:
+
+```html
+<html>
+  <body><h1>Hello from Azure VM (Lab 3)</h1></body>
+</html>
+```
+
+2. Upload it to the VM using `scp`:
+
+```bash
+scp index.html $ADMIN_USERNAME@$PUBLIC_IP:~/
+```
+
+3. SSH back into the VM if not already connected:
+
+```bash
+ssh $ADMIN_USERNAME@$PUBLIC_IP
+```
+
+4. Replace the default Apache page:
+
+```bash
+sudo mv ~/index.html /var/www/html/index.html \
+  && sudo chown www-data:www-data /var/www/html/index.html \
+  && sudo chmod 644 /var/www/html/index.html
+```
+
+5. Refresh `http://$PUBLIC_IP` in your browser to see your custom page.
 
 ---
 
 ## 🚀 Step 5: Clean Up Resources
 To avoid ongoing charges, delete the resource group and all resources created in this lab:
 
+
 ```bash
-az group delete --name arm-vm-demo-rg --yes --no-wait
+az group delete --name $RESOURCE_GROUP --yes --no-wait
 ```
 
 This will remove the VM and all related resources.

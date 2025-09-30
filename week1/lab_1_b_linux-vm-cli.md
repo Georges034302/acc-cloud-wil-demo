@@ -44,7 +44,8 @@ az vm create \
   --name $VM_NAME \
   --image Ubuntu2204 \
   --admin-username $ADMIN_USERNAME \
-  --authentication-type password
+  --authentication-type password \
+  --size Standard_B2s
 ```
 
 👉 Notes:
@@ -61,12 +62,14 @@ Allow inbound access for SSH (22) and HTTP (80):
 az vm open-port \
   --resource-group $RESOURCE_GROUP \
   --name $VM_NAME \
-  --port 22
+  --port 22 \
+  --priority 900
 
 az vm open-port \
   --resource-group $RESOURCE_GROUP \
   --name $VM_NAME \
-  --port 80
+  --port 80 \
+  --priority 910
 ```
 
 ---
@@ -77,12 +80,12 @@ az vm open-port \
 Retrieve the public IP of your VM:
 
 ```bash
-az vm show \
+PUBLIC_IP=$(az vm show \
   --resource-group $RESOURCE_GROUP \
   --name $VM_NAME \
   -d \
   --query publicIps \
-  -o tsv
+  -o tsv)
 ```
 
 Save this value for use in the next steps.
@@ -95,10 +98,8 @@ Save this value for use in the next steps.
 Connect using the username and password you provided earlier:
 
 ```bash
-ssh $ADMIN_USERNAME@<public-ip>
+ssh $ADMIN_USERNAME@$PUBLIC_IP
 ```
-
-*(Replace `<public-ip>` with the actual IP address you retrieved.)*
 
 When prompted, enter the password you set during VM creation.
 
@@ -149,13 +150,13 @@ You should see the **Apache2 Ubuntu Default Page**.
 2. Upload it to the VM using `scp`:
 
 ```bash
-scp index.html $ADMIN_USERNAME@<public-ip>:~/
+scp index.html $ADMIN_USERNAME@$PUBLIC_IP:~/
 ```
 
 3. SSH back into the VM if not already connected:
 
 ```bash
-ssh $ADMIN_USERNAME@<public-ip>
+ssh $ADMIN_USERNAME@$PUBLIC_IP
 ```
 
 
@@ -168,11 +169,6 @@ sudo mv ~/index.html /var/www/html/index.html \
 ```
 
 5. Refresh `http://<public-ip>` in your browser to see your custom page.
-
----
-
-## ✅ Lab Summary
-
 
 ---
 
@@ -194,4 +190,4 @@ You successfully:
 - Connected to the VM via SSH  
 - Installed Apache HTTP server  
 - Replaced the default page with a custom `index.html`  
-- Cleaned up all resources to avoid charges  
+- Cleaned up all resources to avoid charges
