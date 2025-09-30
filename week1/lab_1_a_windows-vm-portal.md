@@ -55,7 +55,7 @@ Click **Next: Disks >**.
 ---
 
 ## 🚀 Step 3: Configure Disks
-1. **OS disk type**: Leave default **Premium SSD (locally-redundant storage)**.  
+1. **OS disk type**: Leave default **Premium SSD (LRS)** (or **Premium SSD v2** if shown).  
 2. **Encryption type**: Leave default **Default (platform-managed key)**.  
 3. **Data disks**: Leave empty.  
 4. Click **Next: Networking >**.  
@@ -119,6 +119,7 @@ Click **Next: Review + create >**.
 1. In the VM overview page, click **Connect** (top menu).  
 2. Select **RDP**.  
 3. Under **Connect via RDP**, ensure **Public IP address** is selected and Port is `3389`.  
+   > If **Connect** is disabled or Public IP is empty, wait until the VM **Status = Running** and a **Public IP** is assigned on the Overview blade.
 4. Click **Download RDP File**.  
 5. Open the `.rdp` file:  
    - On Windows: it opens in Remote Desktop Connection.  
@@ -135,7 +136,7 @@ Click **Next: Review + create >**.
 1. Inside the VM, open **File Explorer**.  
 2. Look at **This PC**:  
    - **C:** drive = OS disk (persistent).  
-   - **D:** drive = Temporary disk (data may be lost if redeployed).  
+   - **D:** drive = Temporary disk **(if present; some VM sizes don’t include temp storage and D: won’t appear)**. Data on a temporary disk can be lost on redeploy/maintenance.  
 
 ---
 
@@ -164,8 +165,6 @@ Click **Next: Review + create >**.
 
 ---
 
----
-
 ## 🚀 Step 14: Clean Up Resources
 To avoid ongoing charges, delete the resource group and all resources created in this lab:
 
@@ -185,5 +184,5 @@ You have successfully:
 - Configured VM size, region, and login credentials  
 - Connected via RDP  
 - Explored OS and temporary disks  
-- Install IIS Web Server and tested it  
+- Installed IIS Web Server and tested it  
 - Observed how costs behave when VM is stopped  
