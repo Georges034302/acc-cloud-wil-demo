@@ -5,7 +5,7 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 ---
 
 <details>
-  <summary>Week 1: Shell Scripts and VM Setup</summary>
+  <summary>Week 1: Azure VM Provisioning (Portal, CLI, ARM)</summary>
 
   Learn how to provision and configure Azure Virtual Machines using the Azure Portal, CLI, and ARM templates.
 
