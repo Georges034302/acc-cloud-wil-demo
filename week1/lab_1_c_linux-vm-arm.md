@@ -223,7 +223,7 @@ sudo mv ~/index.html /var/www/html/index.html \
 
 ---
 
-## 🚀 Step 5: Clean Up Resources
+## 🚀 Step 6: Clean Up Resources
 To avoid ongoing charges, delete the resource group and all resources created in this lab:
 
 
