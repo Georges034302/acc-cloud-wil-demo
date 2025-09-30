@@ -1,13 +1,18 @@
-# Demo Guide: Create a Linux VM Using ARM Template with NSG and Rules
+# Lab 1_c: Provision a Linux VM Using an ARM Template
 
 ## 🎯 Objective
-Deploy a Linux VM using an ARM template, attach a Network Security Group (NSG) to the VM NIC, and configure rules for HTTP, HTTPS, and SSH.
+Deploy a Linux VM in Azure using an ARM template, connect via SSH, and configure it as a simple web server.
 
 ---
 
-## 📝 Instructions
+## 📝 Requirements
+- An active Azure subscription  
+- Azure CLI installed and logged in (`az login`)  
+- SSH client available (Linux/macOS: built-in, Windows: PowerShell or PuTTY/Microsoft Terminal)  
 
-### 1️⃣ Save the ARM Template
+---
+
+## 🚀 Step 1: Save the ARM Template
 
 Create a file named `linux-vm-arm.json` with the following content:
 
@@ -21,55 +26,6 @@ Create a file named `linux-vm-arm.json` with the following content:
     "adminPassword": { "type": "securestring" }
   },
   "resources": [
-    {
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2020-11-01",
-      "name": "[concat(parameters('vmName'), '-nsg')]",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "Allow-SSH",
-            "properties": {
-              "priority": 1000,
-              "protocol": "Tcp",
-              "access": "Allow",
-              "direction": "Inbound",
-              "sourceAddressPrefix": "*",
-              "sourcePortRange": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "22"
-            }
-          },
-          {
-            "name": "Allow-HTTP",
-            "properties": {
-              "priority": 1010,
-              "protocol": "Tcp",
-              "access": "Allow",
-              "direction": "Inbound",
-              "sourceAddressPrefix": "*",
-              "sourcePortRange": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "80"
-            }
-          },
-          {
-            "name": "Allow-HTTPS",
-            "properties": {
-              "priority": 1020,
-              "protocol": "Tcp",
-              "access": "Allow",
-              "direction": "Inbound",
-              "sourceAddressPrefix": "*",
-              "sourcePortRange": "*",
-              "destinationAddressPrefix": "*",
-              "destinationPortRange": "443"
-            }
-          }
-        ]
-      }
-    },
     {
       "type": "Microsoft.Network/publicIPAddresses",
       "apiVersion": "2020-11-01",
@@ -87,12 +43,7 @@ Create a file named `linux-vm-arm.json` with the following content:
         "subnets": [
           {
             "name": "default",
-            "properties": {
-              "addressPrefix": "10.0.0.0/24",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', concat(parameters('vmName'), '-nsg'))]"
-              }
-            }
+            "properties": { "addressPrefix": "10.0.0.0/24" }
           }
         ]
       }
@@ -141,13 +92,11 @@ Create a file named `linux-vm-arm.json` with the following content:
         "storageProfile": {
           "imageReference": {
             "publisher": "Canonical",
-            "offer": "UbuntuServer",
-            "sku": "18.04-LTS",
+            "offer": "0001-com-ubuntu-server-jammy",
+            "sku": "22_04-lts",
             "version": "latest"
           },
-          "osDisk": {
-            "createOption": "FromImage"
-          }
+          "osDisk": { "createOption": "FromImage" }
         },
         "networkProfile": {
           "networkInterfaces": [
@@ -162,34 +111,91 @@ Create a file named `linux-vm-arm.json` with the following content:
 }
 ```
 
-### 2️⃣ Deploy the Template
+---
+
+## 🚀 Step 2: Deploy the Template
+
+
+Run the following commands in your terminal (replace parameters as needed):
 
 ```bash
-az group create --name arm-vm-demo-rg --location australiaeast
+# Create a resource group
+az group create \
+  --name arm-vm-demo-rg \
+  --location australiaeast
 
+# Deploy ARM template (password will be prompted securely)
 az deployment group create \
   --resource-group arm-vm-demo-rg \
   --template-file linux-vm-arm.json \
-  --parameters vmName=armdemo-vm adminUsername=azureuser adminPassword=YourP@ssw0rd123
+  --parameters \
+    vmName=armdemo-vm \
+    adminUsername=azureuser
 ```
 
-### 3️⃣ Connect and Test
-
-- Get the public IP from the Portal or with:
-  ```bash
-  az vm show --resource-group arm-vm-demo-rg --name armdemo-vm -d --query publicIps -o tsv
-  ```
-- SSH to the VM:
-  ```bash
-  ssh azureuser@<public-ip>
-  ```
-- Install Apache:
-  ```bash
-  sudo apt-get update
-  sudo apt-get install -y apache2
-  ```
-- Test by browsing to `http://<public-ip>`
+👉 At this point, Azure CLI will prompt you to enter the `adminPassword` securely. The password will not be visible or stored in your shell history.
 
 ---
 
-✅ **You have deployed a Linux VM with NSG
+## 🚀 Step 3: Connect to the VM
+
+1. Retrieve the public IP of your VM:
+
+```bash
+az vm show --resource-group arm-vm-demo-rg --name armdemo-vm -d --query publicIps -o tsv
+```
+
+2. Connect via SSH:
+
+```bash
+ssh azureuser@<public-ip>
+```
+
+*(Replace `<public-ip>` with the actual IP returned above.)*
+
+---
+
+## 🚀 Step 4: Install Apache Web Server
+
+Inside the VM:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y apache2
+```
+
+To test, open a browser and navigate to:
+
+```
+http://<public-ip>
+```
+
+You should see the **Apache2 Ubuntu Default Page**.
+
+---
+
+## ✅ Lab Summary
+
+
+---
+
+## 🚀 Step 5: Clean Up Resources
+To avoid ongoing charges, delete the resource group and all resources created in this lab:
+
+```bash
+az group delete --name arm-vm-demo-rg --yes --no-wait
+```
+
+This will remove the VM and all related resources.
+
+---
+
+## ✅ Lab Summary
+
+You successfully:
+
+- Deployed a Linux VM (Ubuntu 22.04 LTS) using an ARM template  
+- Entered the admin password securely at deployment time  
+- Connected via SSH  
+- Installed and tested Apache web server  
+- Cleaned up all resources to avoid charges  

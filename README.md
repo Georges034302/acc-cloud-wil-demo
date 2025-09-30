@@ -9,15 +9,14 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 
   Learn how to provision and configure Azure Virtual Machines using the Azure Portal, CLI, and ARM templates.
 
+
   **Labs for this week:**
   - [lab_1_a_windows-vm-portal.md](week1/lab_1_a_windows-vm-portal.md):  
     *Create a Windows VM using the Azure Portal and connect to it via RDP.*
-  - [lab_1_b_linux-vm-arm-nsg.md](week1/lab_1_b_linux-vm-arm-nsg.md):  
-    *Deploy a Linux VM using an ARM template with NSG rules for SSH, HTTP, and HTTPS.*
-  - [lab_1_c_linux-vm-cli-apache.md](week1/lab_1_c_linux-vm-cli-apache.md):  
-    *Deploy a Linux VM using Azure CLI, SSH into it, and install Apache HTTP server.*
-  - [vm-setup.md](week1/vm-setup.md):  
-    *General VM setup guide and project upload instructions.*
+  - [lab_1_b_linux-vm-cli.md](week1/lab_1_b_linux-vm-cli.md):  
+    *Create a Linux VM using Azure CLI, connect via SSH, install Apache, and upload a custom web page.*
+  - [lab_1_c_linux-vm-arm.md](week1/lab_1_c_linux-vm-arm.md):  
+    *Deploy a Linux VM using an ARM template, connect via SSH, and install Apache.*
 
 </details>
 

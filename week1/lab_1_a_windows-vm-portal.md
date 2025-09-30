@@ -1,4 +1,4 @@
-# Lab 1: Create and Explore a Windows Virtual Machine in Azure Portal
+# Lab 1_a: Create and Explore a Windows Virtual Machine in Azure Portal
 
 ## 🎯 Objectives
 - Create a Windows Virtual Machine (VM) in the Azure Portal  
