@@ -1,5 +1,8 @@
 # Lab 1_b: Create a Linux VM Using Azure CLI and Configure Apache HTTP Server
 
+<img width="1536" height="1024" alt="Lab_1_b" src="https://github.com/user-attachments/assets/946d8abb-965c-4af2-8dda-580d4dad547d" />
+
+---
 ## 🎯 Objective
 Provision a Linux Virtual Machine using Azure CLI with password authentication, connect via SSH, and install Apache HTTP server.
 
