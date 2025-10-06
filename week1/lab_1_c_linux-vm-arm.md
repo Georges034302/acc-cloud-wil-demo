@@ -1,5 +1,8 @@
 # Lab 1_c: Provision a Linux VM Using an ARM Template
 
+<img width="1024" height="1024" alt="Lab_1_c" src="https://github.com/user-attachments/assets/5e44643f-3b00-4404-a9a7-d6f641db3e0a" />
+
+---
 ## 🎯 Objective
 Deploy a Linux VM in Azure using an ARM template, connect via SSH, and configure it as a simple web server.
 
