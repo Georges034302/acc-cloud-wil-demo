@@ -1,6 +1,6 @@
 # 🔐 Lab 2-A: Microsoft Entra ID Authentication for Azure Blob Storage
 
-<img width="1410" height="340" alt="ZZZIMAGE" src="https://github.com/user-attachments/assets/13cbd2bb-dd22-4f92-bff3-12e81a7efcfe" />
+<img width="1536" height="1024" alt="IMAGE" src="https://github.com/user-attachments/assets/bb7d623d-6b95-4983-841c-ca93059455da" />
 
 Use Microsoft Entra ID (formerly Azure AD) to grant secure, token-based access to Blob Storage **without** using storage keys or SAS tokens.
 
