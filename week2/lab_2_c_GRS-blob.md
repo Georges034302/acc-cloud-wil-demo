@@ -1,6 +1,7 @@
 # 🌏 Lab 2-C: Geo-Redundant Storage and Failover Simulation
 
-<img width="1280" height="720" alt="Geo-Redundant Storage Diagram" src="sandbox:/mnt/data/A_diagram_in_digital_illustration_format_illustrat.png" />
+
+<img width="1536" height="1024" alt="IMAGE" src="https://github.com/user-attachments/assets/5bd9e0a4-5ce9-4c21-90dc-96fd0a5f825c" />
 
 Demonstrate **business continuity and data durability** by configuring a **Geo-Redundant Storage Account (GRS)** and performing a **failover simulation** to validate data replication across Azure regions.
 
