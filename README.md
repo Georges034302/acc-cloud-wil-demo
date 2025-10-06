@@ -23,15 +23,15 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 <details>
   <summary>Week 2: Securing Access to Azure Blob Storage</summary>
 
-  Learn how to securely manage access to Azure Blob Storage using authentication, RBAC, and SAS.
+  Learn how to securely manage access to Azure Blob Storage using authentication, RBAC, SAS, and geo-redundancy.
 
   **Labs for this week:**
-  - [lab_2_a_authentication-blob.md](week2/lab_2_a_authentication-blob.md):  
-    *Authenticate and access Azure Blob Storage securely.*
-  - [lab_2_b_rbac-blob.md](week2/lab_2_b_rbac-blob.md):  
+  - [lab_2_a_rbac-blob.md](week2/lab_2_a_rbac-blob.md):  
     *Grant and test RBAC roles for Blob Storage using Azure CLI.*
-  - [lab_2_c_sas-blob.md](week2/lab_2_c_sas-blob.md):  
+  - [lab_2_b_sas-blob.md](week2/lab_2_b_sas-blob.md):  
     *Generate and use Shared Access Signatures (SAS) for delegated access to blobs.*
+  - [lab_2_c_GRS-blob.md](week2/lab_2_c_GRS-blob.md):  
+    *Configure geo-redundant storage and simulate failover for Azure Blob Storage.*
 
 </details>
 
