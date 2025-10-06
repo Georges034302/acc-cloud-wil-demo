@@ -1,6 +1,7 @@
 # 🔐 Lab 2-B: Shared Access Signature (SAS) for Azure Blob Storage
 
 
+<img width="1536" height="850" alt="IMAGE" src="https://github.com/user-attachments/assets/30894230-b6fa-4cec-9936-7caf6b4320a3" />
 
 Learn how to create and test a **time-limited Shared Access Signature (SAS)** token to grant fine-grained, temporary access to Blob Storage **without assigning RBAC roles**.
 
