@@ -1,5 +1,8 @@
 # Lab 1_a: Create and Explore a Windows Virtual Machine in Azure Portal
 
+<img width="1024" height="1024" alt="Lab_1_a" src="https://github.com/user-attachments/assets/7b45bf73-d066-4fd4-ae88-37a14537cf25" />
+
+---
 ## 🎯 Objectives
 - Create a Windows Virtual Machine (VM) in the Azure Portal  
 - Connect to the VM using Remote Desktop Protocol (RDP)  
