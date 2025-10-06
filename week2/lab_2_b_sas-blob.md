@@ -52,17 +52,37 @@ blob_name="example.txt"
 
 **CLI**
 ```bash
-az group create --name "$rg" --location "$location"
+az group create \
+  --name "$rg" \
+  --location "$location"
 
-az storage account create   --name "$storage"   --resource-group "$rg"   --location "$location"   --sku Standard_LRS
+az storage account create \
+  --name "$storage" \
+  --resource-group "$rg" \
+  --location "$location" \
+  --sku Standard_LRS
 
-az storage container create   --account-name "$storage"   --name "$container"   --auth-mode login   --public-access off
+az storage container create \
+  --account-name "$storage" \
+  --name "$container" \
+  --auth-mode login \
+  --public-access off
 
-account_key=$(az storage account keys list   --account-name "$storage"   --resource-group "$rg"   --query '[0].value' -o tsv)
+account_key=$(az storage account keys list \
+  --account-name "$storage" \
+  --resource-group "$rg" \
+  --query '[0].value' \
+  -o tsv)
 
 echo "This is a SAS demo blob" > "$blob_name"
 
-az storage blob upload   --account-name "$storage"   --container-name "$container"   --name "$blob_name"   --file "$blob_name"   --account-key "$account_key"   --overwrite
+az storage blob upload \
+  --account-name "$storage" \
+  --container-name "$container" \
+  --name "$blob_name" \
+  --file "$blob_name" \
+  --account-key "$account_key" \
+  --overwrite
 ```
 
 ---
@@ -83,7 +103,14 @@ az storage blob upload   --account-name "$storage"   --container-name "$containe
 ```bash
 expiry=$(date -u -d "1 hour" '+%Y-%m-%dT%H:%MZ')
 
-az storage account generate-sas   --permissions r   --account-name "$storage"   --services b   --resource-types sco   --expiry "$expiry"   --https-only   --output tsv
+az storage account generate-sas \
+  --permissions r \
+  --account-name "$storage" \
+  --services b \
+  --resource-types sco \
+  --expiry "$expiry" \
+  --https-only \
+  --output tsv
 ```
 
 Compose the URL:
@@ -117,7 +144,10 @@ echo "https://$storage.blob.core.windows.net/$container/$blob_name?<SAS_TOKEN>"
 
 ## 🧹 Clean Up
 ```bash
-az group delete --name "$rg" --yes --no-wait
+az group delete \
+  --name "$rg" \
+  --yes \
+  --no-wait
 ```
 
 ---
@@ -126,6 +156,6 @@ az group delete --name "$rg" --yes --no-wait
 ✅ Understand **SAS** as an alternative to RBAC for delegated access  
 ✅ Generate and test **time-limited blob access**  
 ✅ Recognize **security risks and revocation methods**  
-✅ Contrast **identity-based** vs **token-based** access models  
+✅ Contrast **identity-based** vs **token-based** access models
 
 
