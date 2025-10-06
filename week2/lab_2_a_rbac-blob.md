@@ -1,6 +1,7 @@
 # 🔐 Lab 2-A: Role-Based Access Control (RBAC) for Azure Blob Storage
 
-<img width="1536" height="1024" alt="RBAC Diagram" src="https://github.com/user-attachments/assets/bb7d623d-6b95-4983-841c-ca93059455da" />
+<img width="1395" height="859" alt="IMAGE" src="https://github.com/user-attachments/assets/c51e28aa-691b-42bc-b410-c5f640cd1462" />
+
 
 Use Azure **Role-Based Access Control (RBAC)** to manage and enforce granular access to Azure Blob Storage.  
 This lab demonstrates how user permissions directly impact data-plane operations such as blob uploads.
