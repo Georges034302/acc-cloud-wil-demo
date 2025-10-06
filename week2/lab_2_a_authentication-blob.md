@@ -1,9 +1,9 @@
 # 🔐 Demo Guide: Azure AD Authentication for Blob Storage
 
-## 🌟 Objective
+<img width="1410" height="340" alt="ZZZIMAGE" src="https://github.com/user-attachments/assets/13cbd2bb-dd22-4f92-bff3-12e81a7efcfe" />
 
-Use Azure Active Directory (Azure AD) to grant secure, token-based access to Blob Storage without using keys or SAS tokens.
 
+Use Microsoft Entra ID (Azure AD) to grant secure, token-based access to Blob Storage without using keys or SAS tokens.
 ---
 
 ## 🌭 Prerequisites
