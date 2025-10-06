@@ -1,222 +1,183 @@
-# 🔐 Demo Guide: Azure AD Authentication for Blob Storage
+# 🔐 Lab 2-A: Microsoft Entra ID Authentication for Azure Blob Storage
 
 <img width="1410" height="340" alt="ZZZIMAGE" src="https://github.com/user-attachments/assets/13cbd2bb-dd22-4f92-bff3-12e81a7efcfe" />
 
+Use Microsoft Entra ID (formerly Azure AD) to grant secure, token-based access to Blob Storage **without** using storage keys or SAS tokens.
 
-Use Microsoft Entra ID (Azure AD) to grant secure, token-based access to Blob Storage without using keys or SAS tokens.
 ---
 
-## 🌭 Prerequisites
+## 🌟 Objective
+Demonstrate secure, identity-based access to Azure Blob Storage with role-based authorization (RBAC) using **your own user account**.
 
+---
+
+## 🧰 Prerequisites
+- Azure subscription with **Owner** or **Contributor** permissions for your signed-in account
 - Azure Portal access
-- Azure CLI installed
-- Two Azure AD users:
-  - One with **Owner** or **Contributor** role (Instructor/Admin)
-  - One with **no roles assigned** (Student/User)
+- Azure CLI ≥ 2.60 installed (`az version`)
 
 ---
 
-## 👣 Step-by-Step Instructions (Portal + CLI)
-
-### 0️⃣ Create Azure AD Users (Admin & Student)
-
-👤 **Performed by: Global Administrator**
-
-🔸 **Portal:**
-
-1. Go to [https://portal.azure.com](https://portal.azure.com)
-2. Open **Microsoft Entra ID** → **Users** → **+ New user**
-3. Create **Admin User**:
-   - Username: `adminuser@<your_domain>`
-   - Name: `Admin User`
-   - Password: auto-generated or custom
-   - Click **Create**
-4. Repeat to create **Student User**:
-   - Username: `studentuser@<your_domain>`
-   - Do not assign roles
-5. Go to **Subscriptions** → your subscription → **Access control (IAM)**
-   - Assign **Owner** or **Contributor** to the **Admin User** only
-
-🔸 **CLI (optional):**
+## ⚙️ Variables (parametrize everything)
+> Copy/paste and adjust as needed. Values are randomized to avoid naming collisions.
 
 ```bash
-# Define strong password
-strong_password='Strong!Pas.sword123'
- 
-# Get current subscription ID
-subscription_id=$(az account show --query id -o tsv)
- 
-# Create Admin User
-az ad user create \
-  --display-name "Admin User" \
-  --user-principal-name "adminuser@$my_domain" \
-  --password "$strong_password" \
-  --force-change-password-next-sign-in true
- 
-# Create Student User
-az ad user create \
-  --display-name "Student User" \
-  --user-principal-name "studentuser@$my_domain" \
-  --password "$strong_password" \
-  --force-change-password-next-sign-in true
- 
-# Assign "Contributor" role to Admin User
-az role assignment create \
-  --assignee "adminuser@$my_domain" \
-  --role "Contributor" \
-  --scope "/subscriptions/$subscription_id"
+# ==== PARAMS ====
+location="australiaeast"
+rg="adblobdemo-rg"
+storage="adblob$RANDOM"
+container="files$RANDOM"
+file_name="demo.txt"
 ```
 
-🔐 **Login Tips:**
-
-- After user creation, the portal shows the temporary password.
-- User receives an email invite (if email is configured), or the admin shares the credentials manually.
-- On first login, users are prompted to reset their password.
-- Use **Incognito Mode** to sign in separately as **student user**.
-
 ---
 
-### 1️⃣ Create Storage Account with Azure AD Authentication
+## 👣 Step-by-Step (Portal + CLI)
 
-👤 **Performed by: Admin User**
+### 1) Create Resource Group & Storage Account
 
-🔸 **Portal:**
+**Portal**
+1. Go to **Storage accounts → + Create**.
+2. Resource Group → **Create new:** `adblobdemo-rg`.
+3. Storage account name → `adblob<unique>`.
+4. Region → **Australia East**.
+5. Redundancy → **Standard LRS**.
+6. **Review + Create → Create**.
 
-1. Log in as **Admin User**
-2. Go to **Storage accounts** → **+ Create**
-3. Fill in:
-   - Resource group: `adblobdemo-rg`
-   - Storage name: `adblobdemo<unique>`
-   - Region: `Australia East`
-   - SKU: Standard\_LRS
-4. Click **Review + create** → **Create**
-5. After deployment completes, go to the **Storage Account**
-6. In the left menu, click **Configuration**
-7. Under **Default to Azure AD authorization in the Azure portal**, set to **Enabled**
-8. Enable the setting **Allow enabling public access override** if it's not already enabled
-9. Click **Save**
+**Important (Portal-only setting):**
+- Open the new Storage Account → **Configuration**.
+- Set **Default to Azure AD authorization in the Azure portal** → **Enabled**.
+- Click **Save**.
 
-💡 These two settings ensure:
-
-- Azure AD token-based authentication is enforced in the portal and CLI.
-- You can assign granular access at the container level via IAM.
-
-🔸 **CLI:**
-
+**CLI**
 ```bash
-az login  # Log in as Admin User
+az login
 
-az group create --name adblobdemo-rg --location australiaeast
+az group create \
+  --name "$rg" \
+  --location "$location"
 
 az storage account create \
-  --name adblobdemo123 \
-  --resource-group adblobdemo-rg \
-  --location australiaeast \
+  --name "$storage" \
+  --resource-group "$rg" \
+  --location "$location" \
   --sku Standard_LRS
 ```
-
-⚠️ **Important:** Step 6–9 **must be done in the Portal by the Admin User.** There is currently **no CLI/ARM option** to set "Azure AD authorization" or "public access override".
+> ⚠️ The **Azure AD authorization** default cannot currently be set by CLI/ARM; use the **Portal** once after creation.
 
 ---
 
-### 2️⃣ Create a Private Blob Container
+### 2) Create a **Private** Blob Container
 
-👤 **Performed by: Admin User**
+**Portal**
+1. Storage Account → **Containers → + Container**.
+2. Name → `files<unique>`.
+3. Public access → **Private (no anonymous access)** → **Create**.
 
-🔸 **Portal:**
-
-1. Go to **Storage Account** → **Containers** → **+ Container**
-2. Name: `myfiles`
-3. Access level: **Private (no anonymous access)**
-4. Click **Create**
-
-🔸 **CLI:**
-
+**CLI**
 ```bash
 az storage container create \
-  --account-name adblobdemo123 \
-  --name myfiles \
+  --account-name "$storage" \
+  --name "$container" \
   --auth-mode login \
   --public-access off
 ```
 
 ---
 
-### 3️⃣ Assign Role to Student
+### 3) Attempt Upload (Expect **Failure** — no role yet)
 
-👤 **Performed by: Admin User**
+**Portal**
+- Go to the container → **Upload** a small file → Upload fails with **AuthorizationPermissionMismatch**.
 
-🔸 **Portal:**
-
-1. Go to **Storage Account** → **Access control (IAM)**
-2. Click **+ Add role assignment**
-3. Role: `Storage Blob Data Contributor` (read/write)
-4. Click **Next**, then **+ Select members**
-5. Find and select the **student user**
-6. Click **Review + assign**
-
-🔸 **CLI:**
-
+**CLI**
 ```bash
-az role assignment create \
-  --assignee studentuser@<your_domain> \
-  --role "Storage Blob Data Contributor" \
-  --scope "/subscriptions/<subscription_id>/resourceGroups/adblobdemo-rg/providers/Microsoft.Storage/storageAccounts/adblobdemo123"
+echo "Azure AD Blob test" > "$file_name"
+
+az storage blob upload \
+  --account-name "$storage" \
+  --container-name "$container" \
+  --name "$file_name" \
+  --file "$file_name" \
+  --auth-mode login
 ```
+**Expected:** Failure (insufficient privileges).
+
+> 💡 This demonstrates identity-based access **without** SAS/keys and the need for RBAC on data plane.
 
 ---
 
-### 4️⃣ Test Access as Student
+### 4) Assign Role to **Yourself** (Data Plane RBAC)
 
-👤 **Performed by: Student User**
+**Portal**
+1. Storage Account → **Access control (IAM) → + Add role assignment**.
+2. Role → **Storage Blob Data Contributor**.
+3. Member → your signed-in user → **Review + assign**.
 
-🔸 **Portal:**
-
-1. Open **Incognito Mode** and log in as the **student user**
-2. Go to **Storage Account** → **Containers** → `myfiles`
-3. Click **Upload**
-4. Choose a file and enable **Overwrite if file exists**
-5. Click **Upload**
-
-🔸 **CLI:**
-
+**CLI**
 ```bash
-az login  # Log in as student user
+subid=$(az account show --query id -o tsv)
+upn=$(az ad signed-in-user show --query userPrincipalName -o tsv)
 
+az role assignment create \
+  --assignee "$upn" \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/$subid/resourceGroups/$rg/providers/Microsoft.Storage/storageAccounts/$storage"
+```
+
+> ⏳ RBAC propagation can take up to a few minutes. If access still fails, wait 60–120 seconds and retry.
+
+---
+
+### 5) Retry Upload (Expect **Success**)
+
+**Portal**
+- Upload the same file again → **Succeeds** ✅ (authorized via Entra ID token).
+
+**CLI**
+```bash
 az storage blob upload \
-  --account-name adblobdemo123 \
-  --container-name myfiles \
-  --name test.txt \
-  --file ./test.txt \
+  --account-name "$storage" \
+  --container-name "$container" \
+  --name "$file_name" \
+  --file "$file_name" \
   --auth-mode login \
   --overwrite true
 ```
 
-✅ Upload will succeed without keys or SAS tokens.
-
----
-
-### 5️⃣ Optional: Verify & Clean Up
-
-👤 **Performed by: Admin User**
-
-🔸 **Verify Blob:**
-
+**Verify**
 ```bash
 az storage blob show \
-  --account-name adblobdemo123 \
-  --container-name myfiles \
-  --name test.txt \
+  --account-name "$storage" \
+  --container-name "$container" \
+  --name "$file_name" \
   --auth-mode login
 ```
 
-🔸 **Clean Up:**
-
+**Optional: list blobs**
 ```bash
-az group delete --name adblobdemo-rg --yes --no-wait
+az storage blob list \
+  --account-name "$storage" \
+  --container-name "$container" \
+  --auth-mode login \
+  -o table
 ```
 
 ---
 
-✅ **Demo complete – students have experienced secure, identity-based access to Azure Blob Storage using Azure AD!**
+## 🧹 Clean Up
+```bash
+az group delete \
+  --name "$rg" \
+  --yes \
+  --no-wait
+```
+> Optional: remove local `demo.txt` if desired.
 
+---
+
+## 🧠 Learning Outcomes
+- Configure **Microsoft Entra ID** authentication for Blob Storage.
+- Understand and validate **RBAC** for data-plane operations.
+- Contrast **key/SAS** vs **identity-based** access.
+- Apply **least-privilege** by granting only **Storage Blob Data Contributor** to the required identity.
