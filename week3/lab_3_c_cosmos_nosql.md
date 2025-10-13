@@ -1,6 +1,6 @@
 # 🌌 **Lab 3-C: Deploying and Querying Azure Cosmos DB (NoSQL)**
 
-<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/8569bba0-dbab-4511-84c0-55fe62bb56db" />
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/9c3ac793-0974-4145-b60b-3e3f12676573" />
 
 ## 🎯 **Objective**
 
