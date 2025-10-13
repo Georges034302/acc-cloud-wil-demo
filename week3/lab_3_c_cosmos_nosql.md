@@ -1,90 +1,126 @@
-# 🌌 Demo Guide: Deploying and Querying Azure Cosmos DB (NoSQL)
+# 🌌 **Lab 3-C: Deploying and Querying Azure Cosmos DB (NoSQL)**
 
-## 🎯 Objective
+## 🎯 **Objective**
 
-Provision an Azure Cosmos DB account using the Core (SQL) API, create a database and container, and run queries using Data Explorer, Visual Studio Code, or Azure CLI.
-
----
-
-## 🛍️ Prerequisites
-
-- Azure Portal access
-- Azure CLI installed
-- Visual Studio Code with **Azure Databases extension** installed
-- A sample JSON file (or JSON content to insert)
+Provision an **Azure Cosmos DB (Core / SQL API)** account, create a **database and container**, and run **NoSQL queries** using **Azure Portal**, **Visual Studio Code**, or **Azure CLI**.
 
 ---
 
-## 👣 Step-by-Step Instructions (Azure Portal + Azure CLI)
+## 🛍️ **Prerequisites**
 
-### 1️⃣ Create a Cosmos DB Account
+- Access to the **Azure Portal** or **Azure Cloud Shell**
+- **Azure CLI** installed (latest version)
+- **Visual Studio Code** with the **Azure Databases extension**
+- A valid **Azure subscription** with permissions to create resources
+- Optional: A **sample JSON** file or JSON snippet to insert into the container
 
-⚠️ **Before you begin**, ensure the Azure Cosmos DB provider is registered for your subscription:
+---
 
-```bash
-az provider register --namespace Microsoft.DocumentDB
+## 👣 **Step-by-Step Instructions**
 
-az provider show --namespace Microsoft.DocumentDB --query "registrationState"
-```
+### 1️⃣ **Register Cosmos DB Provider and Set Up Parameters**
 
-Expected output:
-
-```
-"Registered"
-```
-
-Then proceed with the following commands:
+Before creating Cosmos DB resources, ensure the provider is registered in your subscription.
 
 ```bash
-COSMOS_DB_NAME="cosmosdemo$RANDOM"
-az group create --name cosmos-demo-rg --location australiaeast
+# ==== VARIABLES ====
+location="australiaeast"
+rg="cosmos-demo-rg"
+cosmos_account="cosmosdemo$RANDOM"
+db_name="studentsdb"
+container_name="grades"
+partition_key="/studentId"
 
+# ==== REGISTER COSMOS PROVIDER ====
+az provider register \
+   --namespace Microsoft.DocumentDB
+
+# Verify registration
+az provider show \
+   --namespace Microsoft.DocumentDB \
+   --query "registrationState"
+```
+
+✅ Expected output: `"Registered"`
+
+Then, create a **resource group** for this lab:
+
+```bash
+az group create \
+   --name "$rg" \
+   --location "$location"
+```
+
+---
+
+### 2️⃣ **Create an Azure Cosmos DB Account**
+
+Use either the **Azure Portal** or the **CLI** to create a new account.
+
+#### 🔹 **Using Azure Portal**
+
+1. Go to the [Azure Portal](https://portal.azure.com).  
+2. Search for **Azure Cosmos DB** → Click **+ Create**.  
+3. Select **Azure Cosmos DB for NoSQL** (Core SQL API).  
+4. Fill in the **Basics** tab:  
+   - **Subscription:** your subscription  
+   - **Resource Group:** `cosmos-demo-rg`  
+   - **Account Name:** `cosmosdemo<unique>`  
+   - **Location:** `Australia East`  
+5. Leave defaults for capacity and networking.  
+6. Click **Review + Create** → **Create**.
+
+#### 🔹 **Using Azure CLI**
+
+```bash
 az cosmosdb create \
-  --name $COSMOS_DB_NAME \
-  --resource-group cosmos-demo-rg \
-  --kind GlobalDocumentDB \
-  --locations regionName=australiaeast failoverPriority=0 isZoneRedundant=False
+   --name "$cosmos_account" \
+   --resource-group "$rg" \
+   --kind GlobalDocumentDB \
+   --locations regionName="$location" failoverPriority=0 isZoneRedundant=False
 ```
 
 ---
 
-### 2️⃣ Create a Database and Container
+### 3️⃣ **Create a Database and Container**
 
-🔸 **Portal:**
+#### 🔹 **Using Azure Portal**
 
-1. Open the Cosmos DB account
-2. In the left pane, click **Data Explorer** → **New Container**
-3. Fill in:
-   - **Database id**: `studentsdb` (create new)
-   - **Container id**: `grades`
-   - **Partition key**: `/studentId`
-4. Click **OK** to create
+1. Open your Cosmos DB account in the portal.  
+2. Navigate to **Data Explorer** → Click **New Container**.  
+3. Configure the following:  
+   - **Database ID:** `studentsdb` → *Create new*  
+   - **Container ID:** `grades`  
+   - **Partition key:** `/studentId`  
+4. Click **OK** to create.
 
-🔸 **CLI:**
+#### 🔹 **Using Azure CLI**
 
 ```bash
+# Create Database
 az cosmosdb sql database create \
-  --account-name $COSMOS_DB_NAME \
-  --resource-group cosmos-demo-rg \
-  --name studentsdb
+   --account-name "$cosmos_account" \
+   --resource-group "$rg" \
+   --name "$db_name"
 
+# Create Container
 az cosmosdb sql container create \
-  --account-name $COSMOS_DB_NAME \
-  --resource-group cosmos-demo-rg \
-  --database-name studentsdb \
-  --name grades \
-  --partition-key-path /studentId
+   --account-name "$cosmos_account" \
+   --resource-group "$rg" \
+   --database-name "$db_name" \
+   --name "$container_name" \
+   --partition-key-path "$partition_key"
 ```
 
 ---
 
-### 3️⃣ Insert and Query JSON Documents
+### 4️⃣ **Insert and Query JSON Documents**
 
-#### 📥 Option 1: Insert Using Portal
+#### 📥 **Option 1: Insert via Azure Portal**
 
-1. Go to your Cosmos DB account in the Azure Portal
-2. Click **Data Explorer** → Select `studentsdb > grades`
-3. Click **+ New Item**, then paste:
+1. Open the Cosmos DB account → **Data Explorer**.  
+2. Expand `studentsdb > grades`.  
+3. Click **+ New Item** and paste:  
 
 ```json
 {
@@ -96,35 +132,65 @@ az cosmosdb sql container create \
 }
 ```
 
-4. Click **Save**
+4. Click **Save** to insert the document.
 
-#### 💻 Option 2: Insert and Query Using Visual Studio Code
+---
 
-1. Open VS Code with the **Azure Databases** extension installed
-2. Sign in to your Azure subscription from the extension panel
-3. Locate your Cosmos DB account > Expand `studentsdb > grades`
-4. Right-click `grades` > Click **Create Document**, paste JSON above
-5. Click **Query** tab → Run:
+#### 💻 **Option 2: Insert and Query via Visual Studio Code**
+
+1. Open **VS Code** and install the **Azure Databases** extension.  
+2. Sign in to your Azure account from the extension panel.  
+3. Locate your Cosmos DB account → Expand `studentsdb > grades`.  
+4. Right-click **grades** → Select **Create Document** → Paste JSON.  
+5. Click **Query** tab → Run:  
 
 ```sql
 SELECT * FROM grades g WHERE g.grade > 80
 ```
 
-✅ Results will appear in the query pane
-
-#### 🚫 CLI Limitations
-
-As of now, the Azure CLI **does not support** `az cosmosdb sql container item create`. Therefore, document insertion must be done via Portal or VS Code extension.
+✅ Results showing all students with grades above 80 will appear in the query pane.
 
 ---
 
-## 🪼 Clean Up (Optional)
+#### ⚙️ **CLI Limitation**
+
+The current Azure CLI does **not support** inserting or querying documents (`az cosmosdb sql container item create`).  
+Use the **Azure Portal** or **VS Code extension** for data operations.
+
+---
+
+### 5️⃣ **Validate and Explore**
+
+You can explore container metadata using Azure CLI:  
 
 ```bash
-az group delete --name cosmos-demo-rg --yes --no-wait
+az cosmosdb sql container show \
+   --account-name "$cosmos_account" \
+   --resource-group "$rg" \
+   --database-name "$db_name" \
+   --name "$container_name" \
+   --query "{id:id, partitionKey:partitionKey, defaultTtl:defaultTtl}"
 ```
 
 ---
 
-📊 **Demo complete – students have deployed Cosmos DB, created a container, inserted documents, and run NoSQL queries using both Portal and Visual Studio Code!**
+### 6️⃣ **Clean Up (Optional)**
 
+When finished, delete all resources to avoid ongoing costs:
+
+```bash
+az group delete \
+   --name "$rg" \
+   --yes \
+   --no-wait
+```
+
+---
+
+## 🧩 **Outcome**
+
+Students have successfully:  
+- Registered the **Cosmos DB provider** and deployed a **Cosmos DB account**  
+- Created a **database** and **container** using both Portal and CLI  
+- Inserted and queried **JSON documents** through **Data Explorer** and **VS Code**  
+- Validated data operations and resource configuration  
