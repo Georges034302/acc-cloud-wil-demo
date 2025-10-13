@@ -1,5 +1,7 @@
 # 💾 **Lab 3-B: Deploying and Accessing Azure SQL Database**
 
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/1774eb75-fe08-4735-8cc4-7483fbbb2c61" />
+
 ## 🎯 **Objective**
 
 Provision an **Azure SQL Database**, configure **firewall access**, and connect using **Azure Cloud Shell**, **Docker (sqlcmd)**, or **Azure Data Studio/SSMS**.
