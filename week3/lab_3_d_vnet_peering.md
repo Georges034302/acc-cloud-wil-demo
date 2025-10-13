@@ -1,6 +1,6 @@
 # 🔗 **Lab 3-D: Virtual Network Peering in Azure**
 
-<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/1a313a69-ee65-4de9-8ad9-ad0fcf2e0452" />
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/2ef4079a-0648-4e9c-a491-79dfac283f36" />
 
 ## 🎯 **Objective**
 
