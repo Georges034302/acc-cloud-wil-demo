@@ -1,5 +1,7 @@
 # Lab 3-A: 🌐 Networking & NSG Demo: Subnet + NIC Level Rules
 
+<img width="1024" height="1536" alt="ZIMG" src="https://github.com/user-attachments/assets/0953b63e-f66d-40fe-9165-58a5f0d6f031" />
+
 ## 🎯 Objective
 
 Deploy a secure VM with both **subnet-level** and **NIC-level** NSGs and test access before and after allowing traffic.
