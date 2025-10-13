@@ -1,5 +1,7 @@
 # 🔗 **Lab 3-D: Virtual Network Peering in Azure**
 
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/1a313a69-ee65-4de9-8ad9-ad0fcf2e0452" />
+
 ## 🎯 **Objective**
 
 Set up two Azure Virtual Networks (VNets) and connect them using **VNet Peering** to enable secure, low-latency communication between virtual machines in different networks.
