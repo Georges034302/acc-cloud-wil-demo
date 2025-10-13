@@ -1,5 +1,7 @@
 # 🌌 **Lab 3-C: Deploying and Querying Azure Cosmos DB (NoSQL)**
 
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/8569bba0-dbab-4511-84c0-55fe62bb56db" />
+
 ## 🎯 **Objective**
 
 Provision an **Azure Cosmos DB (Core / SQL API)** account, create a **database and container**, and run **NoSQL queries** using **Azure Portal**, **Visual Studio Code**, or **Azure CLI**.
