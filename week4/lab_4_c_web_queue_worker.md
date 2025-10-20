@@ -1,69 +1,73 @@
-# 🔄 Demo Guide: Web-Queue-Worker Architecture with Azure App Service, Storage Queue, and Azure Functions (Node.js Only)
+# 🧪 Lab 4-C – Web–Queue–Worker Architecture Using Azure App Service and Storage Queue (Node.js)
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/6798c0a5-e8e3-44ad-9cc6-ec11ffeb2102" />
 
 ## 🎯 Objective
+Deploy two Node.js applications —  
+- **Web App (Producer):** Adds tasks to an Azure Storage Queue  
+- **Worker App (Consumer):** Processes tasks from the queue  
 
-Implement a decoupled Web-Queue-Worker pattern using:
-
-- Azure App Service (Node.js Web Frontend)
-- Azure Storage Queue (Message Queue)
-- Azure Function (Node.js Background Worker)
+Demonstrates the **Web–Queue–Worker pattern** for decoupled workloads using **Azure App Service** and **Azure Storage Queue**, without Azure Functions.
 
 ---
 
 ## 🧭 Prerequisites
 
-- Azure Portal access
-- Azure CLI installed and authenticated (`az login`)
-- Azure Functions Core Tools (`func`)
-- Node.js and npm installed
-- Register Microsoft.Web provider
+- Azure CLI (≥ 2.60)
+- Authenticated session (`az login`)
+- Node.js ≥ 18 + npm
+- Git installed
+- [Azure Portal](https://portal.azure.com)
+- **Microsoft.Web** provider registered:
+  ```bash
+  az provider register --namespace Microsoft.Web
+  ```
 
-### ⚙️ Install Azure Functions Core Tools
+---
 
+## ⚙️ Step 1 – Define Variables
 ```bash
-npm i -g azure-functions-core-tools@4 --unsafe-perm true
-```
+RG_NAME="webqueueworker-demo-rg"
+PLAN_NAME="webqueueworker-plan"
+LOCATION="australiaeast"
+SKU="B1"
 
-### 📝 Register Microsoft.Web (One Time Only)
-
-```bash
-az provider register --namespace Microsoft.Web
+STORAGE_ACCOUNT="queueworker$RANDOM"
+QUEUE_NAME="taskqueue"
+WEB_APP="queuewebapp$RANDOM"
+WORKER_APP="queueworkerapp$RANDOM"
 ```
 
 ---
 
-## 👣 Step-by-Step Instructions
-
-### 1️⃣ Setup Resource Group and Storage Queue
-
+## 🧱 Step 2 – Create Resource Group and Storage Queue
 ```bash
-az group create   --name webqueue-demo-rg   --location australiaeast
+# Create resource group
+az group create --name $RG_NAME --location $LOCATION
 
-STORAGE_QUEUE=webqueuestorage$RANDOM
+# Create storage account
+az storage account create   --name $STORAGE_ACCOUNT   --resource-group $RG_NAME   --location $LOCATION   --sku Standard_LRS
 
-az storage account create   --name $STORAGE_QUEUE   --resource-group webqueue-demo-rg   --location australiaeast   --sku Standard_LRS
+# Get connection string
+STORAGE_CONN_STRING=$(az storage account show-connection-string   --name $STORAGE_ACCOUNT   --resource-group $RG_NAME   --query connectionString -o tsv)
 
-STORAGE_CONN_STRING=$(az storage account show-connection-string   --name $STORAGE_QUEUE   --resource-group webqueue-demo-rg   --query connectionString   --output tsv)
-
-az storage queue create   --account-name $STORAGE_QUEUE   --name taskqueue
+# Create queue
+az storage queue create   --account-name $STORAGE_ACCOUNT   --name $QUEUE_NAME
 ```
 
 ---
 
-### 2️⃣ Create Node.js Web App (Queue Producer)
+## 🌐 Step 3 – Create Web App (Producer)
 
-#### 📁 Set Up Folder
-
+### 3.1 – Create Project
 ```bash
-mkdir webqueueapp
-cd webqueueapp
+mkdir webapp
+cd webapp
 npm init -y
 npm install express dotenv @azure/storage-queue
 touch index.js .env
 ```
 
-#### ✍️ index.js
-
+**index.js**
 ```javascript
 const express = require('express');
 const { QueueClient } = require('@azure/storage-queue');
@@ -72,146 +76,178 @@ require('dotenv').config();
 const app = express();
 app.use(express.urlencoded({ extended: true }));
 
-const queueClient = new QueueClient(process.env.STORAGE_CONN_STRING, "taskqueue");
+const queueClient = new QueueClient(process.env.STORAGE_CONN_STRING, process.env.QUEUE_NAME);
 queueClient.createIfNotExists();
 
 app.get('/', (req, res) => {
-    res.send('<form method="POST"><input name="task"><input type="submit"></form>');
+  res.send('<h2>Task Queue</h2><form method="POST"><input name="task"><button>Submit</button></form>');
 });
 
 app.post('/', async (req, res) => {
-    const task = req.body.task;
-    await queueClient.sendMessage(task);
-    res.send(`Task '${task}' added to queue.`);
+  const task = req.body.task;
+  await queueClient.sendMessage(task);
+  res.send(`✅ Task '${task}' added to queue.`);
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`Server running on port ${port}`));
+app.listen(port, () => console.log(`Web app running on port ${port}`));
 ```
 
-#### ✍️ .env
-
-```env
-STORAGE_CONN_STRING=your-actual-connection-string-here
+**.env**
+```
+STORAGE_CONN_STRING=<to-be-injected>
+QUEUE_NAME=taskqueue
 ```
 
-> You will inject this value as App Setting later.
+---
 
-#### 📜 Create App Service Plan and Web App
-
+### 3.2 – Deploy to Azure
 ```bash
-az appservice plan create \
-  --name webqueue-plan \
-  --resource-group webqueue-demo-rg \
-  --sku B1 \
-  --is-linux
+az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
 
-WEB_APP=webqueueapp$RANDOM
+az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $WEB_APP   --runtime "NODE|20-lts"
 
-az webapp create \
-  --resource-group webqueue-demo-rg \
-  --plan webqueue-plan \
-  --name $WEB_APP \
-  --runtime "NODE|20-lts"
-
-az webapp config appsettings set \
-  --resource-group webqueue-demo-rg \
-  --name $WEB_APP \
-  --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING"
+az webapp config appsettings set   --resource-group $RG_NAME   --name $WEB_APP   --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" QUEUE_NAME="$QUEUE_NAME"
 ```
 
-#### 🚀 Deploy via Git (Manual Setup)
+---
 
+### 3.3 – Deploy via Git
 ```bash
 git init
-git remote add azure https://<username>@$WEB_APP.scm.azurewebsites.net/$WEB_APP.git
 echo "web: node index.js" > Procfile
 git add .
-git commit -m "Initial deployment"
+git commit -m "Initial commit - Web Queue Producer"
+git remote add azure https://<username>@$WEB_APP.scm.azurewebsites.net/$WEB_APP.git
 git push azure main:master
 ```
 
-> Use deployment credentials from Azure Portal → App Service → Deployment Center → FTPS Credentials
-
 ---
 
-### 3️⃣ Create Azure Function to Process Queue (Node.js)
+## ⚙️ Step 4 – Create Worker App (Consumer)
 
-#### 📁 Initialize and Scaffold
-
+### 4.1 – Create Project
 ```bash
-func init workerfunc --javascript
-cd workerfunc
-func new --name ProcessTask --template "Azure Queue Storage trigger" --language JavaScript
+cd ..
+mkdir workerapp
+cd workerapp
+npm init -y
+npm install dotenv @azure/storage-queue
+touch worker.js .env
 ```
 
-#### ✍️ Edit `src/functions/ProcessTask.js
-
+**worker.js**
 ```javascript
-const { app } = require('@azure/functions');
+const { QueueClient } = require('@azure/storage-queue');
+require('dotenv').config();
 
-app.storageQueue('ProcessTask', {
-    queueName: 'taskqueue', // <-- match your queue name
-    connection: 'AzureWebJobsStorage', // <-- use your storage connection setting
-    handler: (queueItem, context) => {
-        context.log('✅ Processing task:', queueItem);
+const queueClient = new QueueClient(process.env.STORAGE_CONN_STRING, process.env.QUEUE_NAME);
+
+async function processQueue() {
+  const messages = await queueClient.receiveMessages({ numberOfMessages: 5 });
+  if (messages.receivedMessageItems.length > 0) {
+    for (const msg of messages.receivedMessageItems) {
+      console.log("✅ Processing task:", msg.messageText);
+      await queueClient.deleteMessage(msg.messageId, msg.popReceipt);
     }
-});
+  } else {
+    console.log("⏳ No messages to process...");
+  }
+}
 
+// Poll queue every 10 seconds
+setInterval(processQueue, 10000);
+```
+
+**.env**
+```
+STORAGE_CONN_STRING=<to-be-injected>
+QUEUE_NAME=taskqueue
 ```
 
 ---
 
-#### 🚀 Deploy Node.js Function App
-
+### 4.2 – Deploy to Azure
 ```bash
-# Create Function App
-az functionapp create \
-  --resource-group webqueue-demo-rg \
-  --consumption-plan-location australiaeast \
-  --runtime node \
-  --runtime-version 20 \
-  --functions-version 4 \
-  --name workerfunc123 \
-  --storage-account $STORAGE_QUEUE
+az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $WORKER_APP   --runtime "NODE|20-lts"
 
-# Deploy the NodeJS app
-func azure functionapp publish workerfunc123
+az webapp config appsettings set   --resource-group $RG_NAME   --name $WORKER_APP   --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" QUEUE_NAME="$QUEUE_NAME"
 ```
 
 ---
 
-### 4️⃣ Test End-to-End
-
-1. Open your deployed web app:  
-   `https://<your-web-app-name>.azurewebsites.net/`
-
-2. Submit a task.
-
-3. It gets pushed to `taskqueue`.
-
-4. Azure Function `workerfunc123` logs the message.
-
-#### ✅ View Logs
-
+### 4.3 – Deploy via Git
 ```bash
-az functionapp log tail   --name workerfunc123   --resource-group webqueue-demo-rg
-```
-
-You should see:
-
-```
-✅ Processing task: <your-task>
+git init
+echo "web: node worker.js" > Procfile
+git add .
+git commit -m "Initial commit - Queue Worker"
+git remote add azure https://<username>@$WORKER_APP.scm.azurewebsites.net/$WORKER_APP.git
+git push azure main:master
 ```
 
 ---
 
-### 🧼 Clean Up
+## 🧪 Step 5 – Test End-to-End
 
+1. Open the **Web App** in your browser:  
+   `https://$WEB_APP.azurewebsites.net`
+
+2. Submit a few tasks via the form.
+
+3. The **Worker App** continuously polls and logs processed tasks.
+
+4. View logs:
+   ```bash
+   az webapp log tail --name $WORKER_APP --resource-group $RG_NAME
+   ```
+
+✅ You should see:
+```
+✅ Processing task: Build Docker image
+✅ Processing task: Deploy app
+```
+
+---
+
+## 🧰 Step 6 – Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|--------|-----|
+| Queue not created | Wrong name or region | Run `az storage queue create` again |
+| No logs | Worker not running | Restart App Service: `az webapp restart` |
+| 403 error | Missing app settings | Ensure correct storage connection string set |
+
+---
+
+## 🧼 Step 7 – Clean Up Resources
 ```bash
-az group delete --name webqueue-demo-rg --yes --no-wait
+az group delete --name $RG_NAME --yes --no-wait
 ```
 
 ---
 
-✅ **Demo complete – you have implemented the Web-Queue-Worker pattern using Node.js for both producer and worker!**
+## ✅ Lab Summary
+
+| Component | Purpose |
+|------------|----------|
+| Web App (Producer) | Accepts user input and sends to queue |
+| Storage Queue | Buffers messages between services |
+| Worker App (Consumer) | Polls and processes queued messages |
+
+**Architecture:**  
+- Decoupled via message queue  
+- Independent scaling for producer and worker  
+- Works entirely within Azure App Service (no Functions)
+
+---
+
+### 🧩 Result
+You have built a **Web–Queue–Worker** system in Azure using:
+- **Node.js** web and worker apps  
+- **Azure Storage Queue** for communication  
+- 100% **App Service PaaS** architecture (no Functions required)
+
+---
+
+![Web–Queue–Worker Diagram](A_2D_digital_diagram_illustrates_a_Web-Queue-Worke.png)
