@@ -1,5 +1,7 @@
 # 🧪 Lab 4-A – Deploy a Web App Using Azure App Service (CLI)
 
+<img width="931" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/e0ccd6cc-ff10-4b0f-8197-a1f42eb5a678" />
+
 ## 🎯 Objective
 Deploy a simple Python Flask web application using Azure App Service and understand how the App Service Plan defines compute resources for PaaS hosting.
 
@@ -16,8 +18,8 @@ Deploy a simple Python Flask web application using Azure App Service and underst
 ## ⚙️ Step 1 – Define Variables
 ```bash
 # Define resource names and region
-RG_NAME="rg-appservice-demo"
-PLAN_NAME="plan-demo"
+RG_NAME="appservice-rg"
+PLAN_NAME="plan-demo$RANDOM"
 APP_NAME="webapp$RANDOM"
 LOCATION="australiaeast"
 SKU="B1"
@@ -96,10 +98,9 @@ if __name__ == '__main__':
 echo "flask" > requirements.txt
 ```
 
-### 6.4 – Initialize Git Repository
+### 6.4 – Commit the app to your Git Repository
 ```bash
-# Initialize Git and commit your app
-git init
+# Commit your app
 git add .
 git commit -m "Initial commit – Flask web app"
 ```
