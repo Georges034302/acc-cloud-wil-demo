@@ -1,257 +1,160 @@
-# 🌐 Demo Guide: Deploying a Web App Using Azure App Service
+# 🧪 Lab 4-A – Deploy a Web App Using Azure App Service (CLI)
 
 ## 🎯 Objective
-Deploy a simple web application to Azure App Service using an App Service Plan and understand PaaS hosting capabilities.
+Deploy a simple Python Flask web application using Azure App Service and understand how the App Service Plan defines compute resources for PaaS hosting.
 
 ---
 
 ## 🧭 Prerequisites
-
-- Azure Portal access ([https://portal.azure.com](https://portal.azure.com))
-- Azure CLI installed and authenticated (`az login`)
-- Python 3.11+ installed (for Flask app)
-- Git installed
-- **[Recommended] Register the App Service provider (first-time users):**
-
-  **Portal:**
-  1. In the Azure Portal, search for **Subscriptions** and select your subscription.
-  2. Under **Settings**, click **Resource providers**.
-  3. Search for `Microsoft.Web`.
-  4. Click **Register** if it is not already registered.
-
-  **CLI:**
-  Register with Miscroft.Web: *Azure Resource Provider that manages all web-based (PaaS) resources in Azure*
-  ```bash
-  az provider register --namespace Microsoft.Web
-  ```
-  Confirm the Registration:
-  ```bash
-  az provider show --namespace Microsoft.Web --query registrationState
-  ```
+- Azure CLI (2.60+)
+- Logged in to Azure (`az login`)
+- Azure subscription selected (`az account set --subscription <id>`)
+- Python 3.11 + Flask installed (optional, for local testing)
 
 ---
 
-## 👣 Step-by-Step Instructions (Azure Portal + Azure CLI)
-
-### 1️⃣ Create a Resource Group and App Service Plan
-
-🔸 **Portal:**
-1. Go to [https://portal.azure.com](https://portal.azure.com)
-2. Search for **App Service Plans** → Click **+ Create**
-3. Fill in:
-   - **Resource Group**: `appservice-demo-rg`
-   - **Name**: `demo-plan`
-   - **Region**: `Australia East`
-   - **Pricing tier**: Click **Change size** → Select **B1 (Basic)** or **F1 (Free)**
-4. Click **Review + create** → **Create**
-
-🔸 **CLI:**
+## ⚙️ Step 1 – Define Variables
 ```bash
-az group create --name appservice-demo-rg --location australiaeast
-
-az appservice plan create \
-  --name demo-plan \
-  --resource-group appservice-demo-rg \
-  --sku B1 \
-  --is-linux
+# Define resource names and region
+RG_NAME="rg-appservice-demo"
+PLAN_NAME="plan-demo"
+APP_NAME="webapp$RANDOM"
+LOCATION="australiaeast"
+SKU="B1"
+RUNTIME="PYTHON|3.11"
 ```
-#### 🎯 Expected Output
-
-**Portal:**
-
-- After creating the Resource Group and App Service Plan:
-  - The new App Service Plan (`demo-plan`) appears under **App Service Plans**.
-  - Both resources show **Region** as `Australia East`.
-  - No errors or warnings are shown during creation.
-
-**CLI:**
-
-- For the App Service Plan creation command:
-    ```bash
-    az appservice plan create \
-      --name demo-plan \
-      --resource-group appservice-demo-rg \
-      --sku B1 \
-      --is-linux
-    ```
-  You’ll see a JSON output with key fields:
-    ```json
-    {
-      "name": "demo-plan",
-      "resourceGroup": "appservice-demo-rg",
-      "location": "australiaeast",
-      "sku": {
-        "name": "B1",
-        ...
-      },
-      "status": "Ready",
-      ...
-    }
-    ```
-
-- **Look for `"provisioningState": "Succeeded"` or `"status": "Ready"`** to confirm the resources were created successfully.
-
 ---
 
-### 2️⃣ Create the Web App
-
-🔸 **Portal:**
-1. Go to **App Services** → Click **+ Create**
-2. Fill in:
-   - **App name**: `demo-webapp-<unique>` (e.g. use random name: APP_NAME="demo-webapp$RANDOM")
-   - **Publish**: Code
-   - **Runtime stack**: Choose Python 3.11
-   - **Region**: `Australia East`
-   - **App Service Plan**: Select `demo-plan`
-3. Click **Review + create** → **Create**
-
-🔸 **CLI:**
+## 🏗️ Step 2 – Register App Service Provider
 ```bash
-APP_NAME=webapp$RANDOM
+# Register the Microsoft.Web provider (required for App Service resources)
+az provider register --namespace Microsoft.Web
 
-az webapp create \
-  --resource-group appservice-demo-rg \
-  --plan demo-plan \
-  --name "$APP_NAME" \
-  --runtime "PYTHON|3.11" \
-  --deployment-local-git
+# Verify registration status
+az provider show --namespace Microsoft.Web --query registrationState
 ```
-⏳ Note the Git URL from CLI output for step 3.
-
----
-#### 📦 What Is This Step Doing?
-
-You are provisioning a new web application on **Azure App Service**.
-
-- This step reserves a unique app name and configures the environment (Linux + Python runtime), allowing you to deploy and run your Python code in the cloud.
-- The `--deployment-local-git` flag enables local Git deployment for your app, giving you a special Git URL to deploy code directly from your Codespace.
 
 ---
 
-#### 🎯 Expected Output
-
-**Portal:**
-
-- After creation, your new app (`demo-webapp-<unique>`) appears under **App Services** in the Azure Portal.
-- The app’s **Status** will show as `Running`.
-- The app’s **URL** (e.g., `https://$APP_NAME.azurewebsites.net`) will be displayed at the top of the overview page.
-
-**CLI:**
-
-- The Azure CLI will return a JSON output containing these important fields:
-
-    ```json
-    "defaultHostName": "$APP_NAME.azurewebsites.net",
-    "deploymentLocalGitUrl": "https://<username>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git",
-    ...
-    ```
-#### ⚠️ If Your Git Deployment URL Shows `None@` (e.g., `https://None@$APP_NAME.scm.azurewebsites.net/demo-$APP_NAME.git`)
-
-This means Azure CLI was unable to detect your deployment username.  
-You need to set up App Service deployment credentials before you can deploy code.
-
----
-
-**How to Set Your App Service Deployment Credentials:**
-
-1. **In the Azure Portal:**
-   - Go to **App Services** and select your web app.
-   - In the left menu from **Deployment**, click **Deployment Center**.
-   - Under **Local Git/FTPS Credentials** tab, Set a **username** and **password** 
-   - (these are used only for deployments, not your main Azure login).
-
-2. **After setting your deployment credentials:**
-  - Use the Git URL provided by Azure for your web app (the URL may show `None@`, but that's okay).
-  - When you deploy your code with:
-     ```bash
-     git push azure main:master
-     ```
-     you will be prompted for a username and password (The newly set git username/password)).
-
-  - **Deployment URL:**  
-    ```bash
-    https://<yourusername>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git
-    ```
-
-#### 💡 **Copy the `deploymentLocalGitUrl` value.** You will use this URL for the next deployment step.
-
----
-### 3️⃣ Deploy Code to Azure Web App
-
-We will use a simple Python Flask app.
-
-🗂️ **App structure:**
-Create folder: flaskapp with the correct file names
-```
-flaskapp/
-├── application.py
-├── requirements.txt
-```
-CLI option:
+## 🧱 Step 3 – Create a Resource Group
 ```bash
+# Create a new resource group
+az group create --name $RG_NAME --location $LOCATION
+```
+
+---
+
+## ☁️ Step 4 – Create an App Service Plan
+```bash
+# Create an App Service Plan (Linux, Basic tier)
+az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
+```
+
+---
+
+## 🌐 Step 5 – Create the Web App
+```bash
+# Create a new web app using the defined plan and Python runtime
+az webapp create   --name $APP_NAME   --resource-group $RG_NAME   --plan $PLAN_NAME   --runtime "$RUNTIME"   --deployment-local-git
+```
+
+✅ Output includes the app URL and Git deployment URL, e.g.:
+`https://$APP_NAME.azurewebsites.net`
+
+---
+
+## 🧩 Step 6 – Deploy Application Code (Azure Git Deployment)
+
+### 6.1 – Create a Local Project Folder
+```bash
+# Create and move into a new folder for your app
 mkdir flaskapp
 cd flaskapp
-touch application.py requirements.txt
 ```
 
-
-
-📄 `application.py`
+### 6.2 – Create the Application File
+```bash
+# Create a Python file named application.py
+nano application.py
+```
+**Paste the following code:**
 ```python
 from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
-def hello():
+def home():
     return "<h1>Welcome to Azure App Service!</h1>"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8000)
 ```
 
-📄 `requirements.txt`
-```
-flask
+### 6.3 – Create the Requirements File
+```bash
+# Create a requirements.txt file listing dependencies
+echo "flask" > requirements.txt
 ```
 
-🔸 **Set Up Your Python Environment and Install Dependencies:**
+### 6.4 – Initialize Git Repository
 ```bash
-cd flaskapp
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-**Set Git Remote Deployment URL: (One Time Only Setup)**
-```bash
-cd studentservice
+# Initialize Git and commit your app
 git init
-git remote add azure https://<your-username>@"$APP_NAMEP".scm.azurewebsites.net/"$APP_NAME".git
-```
-
-**Deploy The service: (Reuse and deploy after every update to the service)**
-```bash
 git add .
-git commit -m "Initial commit - app"
-git 
+git commit -m "Initial commit – Flask web app"
+```
 
-✅ After push, browse to `https://$APP_NAME.azurewebsites.net`
-
-🔸 **Alternative Deployment (Zip):**
-1. Zip your `flaskapp` folder.
-2. Go to **Web App → Deployment Center** → Select **Zip Deploy**
-3. Upload the zip file
-
----
-
-### 4️⃣ Test the Application
-- Open the app URL: `https://$APP_NAME.azurewebsites.net`
-- You should see: **Welcome to Azure App Service!**
-
----
-
-## 🧼 Clean Up (Optional)
+### 6.5 – Add Azure Deployment Remote
 ```bash
-az group delete --name appservice-demo-rg --yes --no-wait
+# Add Azure remote (replace <username> with your deployment username)
+git remote add azure https://<username>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git
+```
+
+### 6.6 – Push Code to Azure
+```bash
+# Push the code from your main branch to Azure
+git push azure main:master
+```
+
+### 6.7 – Verify Deployment
+```bash
+# Display the app URL
+echo "https://$APP_NAME.azurewebsites.net"
+```
+Open the URL in your browser — you should see:
+**Welcome to Azure App Service!**
+
+---
+
+## 🔍 Step 7 – Test the Web App
+```bash
+# Confirm app is running
+az webapp show --name $APP_NAME --resource-group $RG_NAME --query state
 ```
 
 ---
 
-✅ **Demo complete – you have deployed a Python web app using Azure App Service and Git!**
+## 🧼 Step 8 – Clean Up Resources (Optional)
+```bash
+# Delete all created resources
+az group delete --name $RG_NAME --yes --no-wait
+```
 
+---
+
+## ✅ Lab Summary
+
+| Step | Description | Command |
+|------|--------------|----------|
+| 1 | Define variables | `RG_NAME`, `PLAN_NAME`, `APP_NAME`, etc. |
+| 2 | Register provider | `az provider register` |
+| 3 | Create resource group | `az group create` |
+| 4 | Create App Service Plan | `az appservice plan create` |
+| 5 | Create Web App | `az webapp create` |
+| 6 | Deploy code | `git push azure main:master` |
+| 7 | Test deployment | `az webapp show` |
+| 8 | Clean up | `az group delete` |
+
+---
+
+**✅ Result:** You have successfully deployed a Python Flask web app to Azure App Service using Azure CLI.
