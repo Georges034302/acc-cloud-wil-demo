@@ -1,117 +1,56 @@
-# Demo Guide: 🧩 Microservices with Independent State and HTTP Communication
+# 🧪 Lab 4-B – Deploy Two Microservices (HTTP Communication with Azure App Service)
+
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/09193f98-810f-4c3b-86d2-e059ea99cff4" />
 
 ## 🎯 Objective
-
-Deploy two independent Python microservices as separate Azure Web Apps.  
-Each service manages its own state and communicates with the other via HTTP requests.
+Deploy two independent Python microservices — **Student Service (Service A)** and **Report Service (Service B)** — as separate Azure Web Apps.  
+Each service maintains its own state and communicates securely using **HTTP/HTTPS**.
 
 ---
 
 ## 🧭 Prerequisites
-
-- Azure Portal access ([https://portal.azure.com](https://portal.azure.com))
-- Azure CLI installed and authenticated (`az login`)
-- Python 3.11+
+- Azure CLI (≥ 2.60)
+- Authenticated Azure session (`az login`)
+- Python 3.11 + Flask installed locally (optional)
 - Git installed
-- Codespaces or local dev environment
-- **[Recommended] Register the App Service provider (first-time users):**
-
-  **Portal:**
-  1. In the Azure Portal, search for **Subscriptions** and select your subscription.
-  2. Under **Settings**, click **Resource providers**.
-  3. Search for `Microsoft.Web`.
-  4. Click **Register** if it is not already registered.
-
-  **CLI:**
-  Register with Miscroft.Web: *Azure Resource Provider that manages all web-based (PaaS) resources in Azure*
+- [Azure Portal](https://portal.azure.com)
+- **Registered App Service Provider (Microsoft.Web)**  
   ```bash
   az provider register --namespace Microsoft.Web
-  ```
-  Confirm the Registration:
-  ```bash
   az provider show --namespace Microsoft.Web --query registrationState
   ```
 
 ---
 
-### 🚀 Post-Service-Deployment Settings: Configuring Deployment Credentials for Azure Git Repos
-
-After you create each web app in Azure (both microservices), you’ll use **local Git deployment**. To push your code, you must have Azure App Service deployment credentials set.
-
-**Portal:**
-
-- After creation, your new app (e.g., `studentservice-<unique>`, `reportservice-<unique>`) appears under **App Services** in the Azure Portal.
-- The app’s **Status** will show as `Running`.
-- The app’s **URL** (e.g., `https://studentservice-<unique>.azurewebsites.net`) will be displayed at the top of the overview page.
-
-**CLI:**
-
-- The Azure CLI will return a JSON output containing these important fields:
-    ```json
-    "defaultHostName": "<app-name>.azurewebsites.net",
-    "deploymentLocalGitUrl": "https://<username>@<app-name>.scm.azurewebsites.net/<app-name>.git",
-    ```
-- **Copy the `deploymentLocalGitUrl` value** for each microservice—you’ll need this to set up your Git remote.
-
----
-
-#### ⚠️ If Your Git Deployment URL Shows `None@`
-
-If you see a URL like `https://None@<app-name>.scm.azurewebsites.net/<app-name>.git`, Azure CLI couldn’t detect your deployment username.  
-**You must set App Service deployment credentials before pushing your code:**
-
-**How to Set Your App Service Deployment Credentials:**
-
-1. **In the Azure Portal:**
-   - Go to **App Services** and select your web app.
-   - In the left menu under **Deployment**, click **Deployment Center**.
-   - Under the **Local Git/FTPS Credentials** tab, set a **username** and **password** (these are only for deployment, not your main Azure login).
-
-2. **After setting your deployment credentials:**
-   - Use the Git URL provided by Azure for your web app (even if it shows `None@`).
-   - When you deploy your code with:
-     ```bash
-     git push azure main:master
-     ```
-     you will be prompted for a username and password.  
-     **Enter the username and password you just set in the Portal.**
-
-   - **Deployment URL format:**
-     ```
-     https://<your-username>@<app-name>.scm.azurewebsites.net/<app-name>.git
-     ```
----
-
-## 👣 Step-by-Step Instructions
-
-### 1️⃣ Create Resource Group and App Service Plan
-
+## ⚙️ Step 1 – Define Variables
 ```bash
-az group create --name microservice-demo-rg --location australiaeast
+RG_NAME="microservice-demo-rg"
+PLAN_NAME="microservice-plan"
+LOCATION="australiaeast"
+SKU="B1"
+RUNTIME="PYTHON|3.11"
 
-az appservice plan create \
-  --name microservice-plan \
-  --resource-group microservice-demo-rg \
-  --sku B1 \
-  --is-linux
+STUDENT_APP="studentservice$RANDOM"
+REPORT_APP="reportservice$RANDOM"
 ```
 
 ---
 
-### 2️⃣ Microservice A: Student Info Service
+## 🧱 Step 2 – Create Resource Group and App Service Plan
+```bash
+az group create --name $RG_NAME --location $LOCATION
 
-🗂️ **App structure:**
-Create folder: studentservice with the correct file names
+az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
 ```
-studentservice/
-├── app.py
-├── requirements.txt
-```
-CLI option:
+
+---
+
+## 🧩 Step 3 – Deploy Service A (Student Service)
+
+### 3.1 – Create Local Folder and Files
 ```bash
 mkdir studentservice
 cd studentservice
-touch app.py requirements.txt
 ```
 
 **app.py**
@@ -121,8 +60,11 @@ app = Flask(__name__)
 
 @app.route('/student/<id>')
 def get_student(id):
-    data = {"id": id, "name": "Ava", "major": "CS"}
+    data = {"id": id, "name": "Ava", "major": "Computer Science"}
     return jsonify(data)
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000)
 ```
 
 **requirements.txt**
@@ -130,60 +72,40 @@ def get_student(id):
 flask
 ```
 
-**Deploy to Azure:**
+---
+
+### 3.2 – Create Azure Web App
 ```bash
-STUDENT_SERVICE_APP=studentservice$RANDOM
-az webapp create \
-  --resource-group microservice-demo-rg \
-  --plan microservice-plan \
-  --name "$STUDENT_SERVICE_APP" \
-  --runtime "PYTHON|3.11" \
-  --deployment-local-git
+az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $STUDENT_APP   --runtime "$RUNTIME"   --deployment-local-git
 ```
-Save the `deploymentLocalGitUrl` output from the command.
-
-**Set Git Remote Deployment URL: (One Time Only Setup)**
-```bash
-cd studentservice
-git init
-git remote add azure https://<your-username>@"$STUDENT_SERVICE_APP".scm.azurewebsites.net/"$STUDENT_SERVICE_APP".git
-```
-
-**Deploy The service: (Reuse and deploy after every update to the service)**
-```bash
-git add .
-git commit -m "Initial commit - Student Info Service"
-git push azure main:master
-```
-Use your Azure App Service deployment credentials when prompted.  
-Wait for deployment to complete.
-
-### 🚦 Test the Student Info Service
-
-### Test Student Service
-
-Open this URL in your browser (replace with your app name):
-
-`https://"$STUDENT_SERVICE_APP".azurewebsites.net/student/101`
-### How It Works
-
-When you visit `/student/101` in your browser, Flask runs the function with `id="101"`, creates a Python dictionary for the student, and returns it as a JSON response. The values are generated in the code—no database or file needed.
 
 ---
 
-### 3️⃣ Microservice B: Report Service (Calls A)
-
-Create folder: reportservice with the correct file names
-```
-reportservice/
-├── app.py
-├── requirements.txt
-```
-CLI option:
+### 3.3 – Deploy via Git
 ```bash
+git init
+git add .
+git commit -m "Initial commit - Student Service"
+git remote add azure https://<username>@$STUDENT_APP.scm.azurewebsites.net/$STUDENT_APP.git
+git push azure main:master
+```
+
+✅ After deployment, test the service:  
+`https://$STUDENT_APP.azurewebsites.net/student/101`  
+Expected Output:  
+```json
+{"id": "101", "name": "Ava", "major": "Computer Science"}
+```
+
+---
+
+## 🧠 Step 4 – Deploy Service B (Report Service)
+
+### 4.1 – Create Local Folder and Files
+```bash
+cd ..
 mkdir reportservice
 cd reportservice
-touch app.py requirements.txt
 ```
 
 **app.py**
@@ -193,7 +115,6 @@ import requests
 from flask import Flask
 
 app = Flask(__name__)
-
 STUDENT_SERVICE_APP = os.environ.get("STUDENT_SERVICE_APP")
 
 @app.route('/report/<id>')
@@ -203,6 +124,8 @@ def get_report(id):
     student = r.json()
     return f"Student {student['name']} is majoring in {student['major']}"
 
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=8000)
 ```
 
 **requirements.txt**
@@ -211,96 +134,83 @@ flask
 requests
 ```
 
-**Deploy to Azure:**
-```bash
-REPORT_SERVICE_APP=reportservice$RANDOM
-az webapp create \
-  --resource-group microservice-demo-rg \
-  --plan microservice-plan \
-  --name "$REPORT_SERVICE_APP" \
-  --runtime "PYTHON|3.11" \
-  --deployment-local-git
-```
-Save the `deploymentLocalGitUrl` output from the command.
+---
 
-**Set Git Remote Deployment URL: (One Time Only Setup)**
+### 4.2 – Create Azure Web App
 ```bash
-cd reportservice
+az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $REPORT_APP   --runtime "$RUNTIME"   --deployment-local-git
+```
+
+---
+
+### 4.3 – Set Environment Variable for Inter-Service Communication
+```bash
+az webapp config appsettings set   --resource-group $RG_NAME   --name $REPORT_APP   --settings STUDENT_SERVICE_APP=$STUDENT_APP
+```
+
+---
+
+### 4.4 – Deploy via Git
+```bash
 git init
-git remote add azure https://<your-username>@"$REPORT_SERVICE_APP".scm.azurewebsites.net/"$REPORT_SERVICE_APP".git
-```
-
-**Deploy The service: (Reuse and deploy after every update to the service)**
-```bash
 git add .
 git commit -m "Initial commit - Report Service"
+git remote add azure https://<username>@$REPORT_APP.scm.azurewebsites.net/$REPORT_APP.git
 git push azure main:master
 ```
-Use your Azure App Service deployment credentials when prompted.  
-Wait for deployment to complete.
-
-> **Note:**  
-> You only need to set the `STUDENT_SERVICE_APP` environment variable **once per Report Service deployment** using this command:
-> 
-> ```bash
-> az webapp config appsettings set \
->   --resource-group microservice-demo-rg \
->   --name "<your report service app name>"  \
->   --settings STUDENT_SERVICE_APP="<your student service app name>"
-> ```
->
-> This setting will persist through restarts and redeployments.
-> Set it again only if you:
-> - Change the Student Service app name,
-> - Delete and recreate the Report Service,
-> - Or want to point to a different Student Service instance.
-
 
 ---
 
-### 4️⃣ Test the Integration
-
-Visit:  
-https://"$REPORT_SERVICE_APP".azurewebsites.net/report/101
-
-**Expected output:**
-```
-Student Ava is majoring in CS
-```
-
----
-
-### 5️⃣ Troubleshooting & Tips
-
-- If you get a timeout or error:
-    - Confirm both web apps are deployed and running in Azure Portal under "App Services".
-    - Test Microservice A directly at:  
-      https://"$STUDENT_SERVICE_APP".azurewebsites.net/student/101
-    - Check your `requirements.txt` for typos and ensure both services have the correct packages.
-    - Use Azure logs for debugging:
-      ```bash
-      az webapp log tail --name "$STUDENT_SERVICE_APP" --resource-group microservice-demo-rg
-      az webapp log tail --name "$REPORT_SERVICE_APP" --resource-group microservice-demo-rg
-      ```
-    - Initial deployments may take 1–2 minutes to become responsive.
-
----
-
-### 6️⃣ Clean Up Resources (Optional)
-
+## 🌐 Step 5 – Test Communication Between Services
+Open in browser or use curl:  
 ```bash
-az group delete --name microservice-demo-rg --yes --no-wait
+curl https://$REPORT_APP.azurewebsites.net/report/101
 ```
-This deletes all resources created in this lab.
+
+✅ Expected Output:  
+```
+Student Ava is majoring in Computer Science
+```
 
 ---
 
-## ✅ Lab Complete!
+## 🧰 Step 6 – Troubleshooting and Logs
+If either service fails:
+```bash
+az webapp log tail --name $STUDENT_APP --resource-group $RG_NAME
+az webapp log tail --name $REPORT_APP --resource-group $RG_NAME
+```
 
-You have:
-- Deployed two independent Python microservices to Azure App Service
-- Enabled one service to call the other over HTTP
-- Validated microservices architecture with independent state and HTTP communication
+Check:
+- Both apps are **Running**
+- Correct environment variable `STUDENT_SERVICE_APP` set
+- Correct runtime (`PYTHON|3.11`)
 
 ---
 
+## 🧼 Step 7 – Clean Up Resources (Optional)
+```bash
+az group delete --name $RG_NAME --yes --no-wait
+```
+
+---
+
+## ✅ Lab Summary
+
+| Step | Description | Output |
+|------|--------------|---------|
+| 1 | Define variables | Service names and plan |
+| 2 | Create RG + Plan | App Service Plan ready |
+| 3 | Deploy Student Service | Independent Flask API |
+| 4 | Deploy Report Service | Consumes Student API via HTTP |
+| 5 | Test communication | Returns formatted report |
+| 6 | Troubleshoot if needed | Use logs or portal |
+| 7 | Clean up (optional) | Deletes resources |
+
+---
+
+### 🧩 Result
+You have deployed:
+- **Service A – Student Service:** Provides student data (API)  
+- **Service B – Report Service:** Consumes Service A via HTTP  
+Demonstrating **microservices with independent state and HTTP integration** using Azure App Service.
