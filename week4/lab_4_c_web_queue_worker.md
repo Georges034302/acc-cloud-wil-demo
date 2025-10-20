@@ -250,4 +250,4 @@ You have built a **Web–Queue–Worker** system in Azure using:
 
 ---
 
-![Web–Queue–Worker Diagram](A_2D_digital_diagram_illustrates_a_Web-Queue-Worke.png)
+
