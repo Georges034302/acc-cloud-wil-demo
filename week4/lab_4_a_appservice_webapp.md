@@ -1,4 +1,4 @@
-# 🧪 Lab 4-A – Deploy a Web App Using Azure App Service (CLI)
+# 🧪 Lab 4-A – Deploy a Web App Using Azure App Service 
 
 <img width="931" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/e0ccd6cc-ff10-4b0f-8197-a1f42eb5a678" />
 
@@ -20,7 +20,7 @@ Deploy a simple Python Flask web application using Azure App Service and underst
 # Define resource names and region
 RG_NAME="appservice-rg"
 PLAN_NAME="plan-demo-$RANDOM"
-APP_NAME="webapp-$RANDOM"
+APP_NAME="webapp-$RANDOM$RANDOM"
 LOCATION="australiaeast"
 # App Service plan SKU (e.g. B1, S1). Increase for scale.
 SKU="B1"
@@ -87,7 +87,7 @@ az webapp deployment source config-local-git \
 
 ---
 
-## 🧩 Step 6 – Deploy Application Code (Azure Git Deployment)
+## 🧩 Step 6 – Create the Python app
 
 ### 6.1 – Create a Local Project Folder
 ```bash
@@ -98,7 +98,7 @@ cd flaskapp
 
 ### 6.2 – Create the Application File
 
-**Create a Python file named app.py  then paste the following code:**
+**Create a Python file named app.py then paste the following code:**
 ```python
 from flask import Flask
 app = Flask(__name__)
@@ -120,55 +120,88 @@ if __name__ == '__main__':
 echo "flask" > requirements.txt
 ```
 
-### 6.4 – Commit the app to your Git Repository
+---
+
+
+## 🧩 Step 7 – Deploy the app to Git (Azure local-git)
+
+Run the following subsections (A→E) in the `flaskapp` folder. Each subsection is a separate code fence.
+
 ```bash
-# Commit your app
+# (A) Ensure we're in the app folder and commit (no-op if already committed)
+cd week4/flaskapp
 git add .
-git commit -m "Initial commit – Flask web app"
+git commit -m "Initial commit – Flask web app" || true
 ```
-### 6.5 – Configure deployment user, ensure remote, clear cached creds, and push (exact)
-Run these exact commands in your `flaskapp` folder. They do not use conditional branches and will set the subscription deployment user, replace the `azure` remote, clear cached credentials for the SCM host, then push.
 
 ```bash
-# 0) (optional) confirm variables (prints app + rg)
-echo "$APP_NAME" "$RG_NAME"
+# (B) Enable SCM Basic Authentication (required for Local Git)
+az resource update \
+  --ids $(az webapp show -g appservice-rg -n webapp-773024041 --query "id" -o tsv)/basicPublishingCredentialsPolicies/scm \
+  --set properties.allow=true
+```
 
-# 1) read password from stdin (hidden)
-read -s -p "Deployment password for Georges034302: " DEPLOY_PW
+```bash
+# (C) Regenerate the global deployment user (required for Local Git)
+read -s -p "New deployment password for Georges034302: " DEPLOY_PW
 echo
+az webapp deployment user set \
+  --user-name Georges034302 \
+  --password "$DEPLOY_PW"
 
-# 2) set the subscription-scoped deployment user to that password
-az webapp deployment user set --user-name Georges034302 --password "$DEPLOY_PW"
-
-# 3) immediately clear the password variable from shell memory
+# Wait 30–60 seconds for propagation, then clear from memory
 DEPLOY_PW=''
 unset DEPLOY_PW
+```
 
-# 4) remove any cached git/http credentials for the SCM host
-printf "protocol=https\nhost=webapp-14592.scm.azurewebsites.net\n" | git credential reject
+```bash
+# (D) Ensure Local-Git endpoint exists and clear any cached credentials
+az webapp deployment source config-local-git \
+  --name "$APP_NAME" \
+  --resource-group "$RG_NAME" > /dev/null
 
-# 5) restore the non-authenticated local-git URL as remote 'azure'
-GIT_URL=$(az webapp deployment source config-local-git --name $APP_NAME --resource-group $RG_NAME --query url -o tsv)
-git remote set-url azure "$GIT_URL"
+SCM_HOST="${APP_NAME}.scm.azurewebsites.net"
+printf "protocol=https\nhost=%s\n" "$SCM_HOST" | git credential reject || true
+git credential-cache exit || true
+```
 
-# 6) push the current branch to Azure (exact step 6.6)
+```bash
+# (E) Set (or update) the 'azure' remote to point to the Local-Git URL
+GIT_URL=$(az webapp deployment source config-local-git \
+  --name "$APP_NAME" \
+  --resource-group "$RG_NAME" \
+  --query url -o tsv)
+
+if git remote get-url azure >/dev/null 2>&1; then
+  git remote set-url azure "$GIT_URL"
+else
+  git remote add azure "$GIT_URL"
+fi
+
+git remote -v   # optional verification
+```
+
+```bash
+# (F) Push the current branch to Azure (you'll be prompted for username/password)
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 git push azure "$BRANCH":master
 ```
 
-### 6.6 – Verify Deployment
+---
+
+## 🧩 Step 8 – Test and Validate
+
+### 8.1 – Verify the app URL
 ```bash
 # Display the app URL
 echo "https://$APP_NAME.azurewebsites.net"
 ```
+
 Open the URL in your browser — you should see:
 **Welcome to Azure App Service!**
 
----
-
-## 🔍 Step 7 – Test the Web App
+### 8.2 – Confirm the app is running
 ```bash
-# Confirm app is running
 az webapp show \
     --name $APP_NAME \
     --resource-group $RG_NAME \
@@ -177,7 +210,7 @@ az webapp show \
 
 ---
 
-## 🧼 Step 8 – Clean Up Resources (Optional)
+## � Step 9 – Clean Up Resources (Optional)
 ```bash
 # Delete all created resources
 az group delete \
@@ -197,7 +230,7 @@ az group delete \
 | 3 | Create resource group | `az group create` |
 | 4 | Create App Service Plan | `az appservice plan create` |
 | 5 | Create Web App | `az webapp create` |
-| 6 | Deploy code | `git push azure main:master` |
+| 6 | Deploy code | See Step 6 — git push (multi-line) |
 | 7 | Test deployment | `az webapp show` |
 | 8 | Clean up | `az group delete` |
 
