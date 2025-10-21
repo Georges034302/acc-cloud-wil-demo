@@ -126,33 +126,37 @@ echo "flask" > requirements.txt
 git add .
 git commit -m "Initial commit – Flask web app"
 ```
+### 6.5 – Configure deployment user, ensure remote, clear cached creds, and push (exact)
+Run these exact commands in your `flaskapp` folder. They do not use conditional branches and will set the subscription deployment user, replace the `azure` remote, clear cached credentials for the SCM host, then push.
 
-### 6.5 – Add Azure Deployment Remote
 ```bash
-# Retrieve the local-git URL (if you didn't run the config-local-git step earlier)
-GIT_URL=$(az webapp deployment source config-local-git \
-    --name $APP_NAME \
-    --resource-group $RG_NAME \
-    --query url -o tsv)
+# 0) (optional) confirm variables (prints app + rg)
+echo "$APP_NAME" "$RG_NAME"
 
-echo "Git remote: $GIT_URL"
-git remote add azure "$GIT_URL"
+# 1) read password from stdin (hidden)
+read -s -p "Deployment password for Georges034302: " DEPLOY_PW
+echo
+
+# 2) set the subscription-scoped deployment user to that password
+az webapp deployment user set --user-name Georges034302 --password "$DEPLOY_PW"
+
+# 3) immediately clear the password variable from shell memory
+DEPLOY_PW=''
+unset DEPLOY_PW
+
+# 4) remove any cached git/http credentials for the SCM host
+printf "protocol=https\nhost=webapp-14592.scm.azurewebsites.net\n" | git credential reject
+
+# 5) restore the non-authenticated local-git URL as remote 'azure'
+GIT_URL=$(az webapp deployment source config-local-git --name $APP_NAME --resource-group $RG_NAME --query url -o tsv)
+git remote set-url azure "$GIT_URL"
+
+# 6) push the current branch to Azure (exact step 6.6)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push azure "$BRANCH":master
 ```
 
-### 6.6 – Push Code to Azure (Oryx should auto-start gunicorn)
-```bash
-# Push the code from your main branch to Azure (local git)
-git push azure main:master
-
-# Alternative: ZIP deploy (useful if you prefer not to use local Git)
-# zip -r ../flaskapp.zip .
-# az webapp deployment source config-zip \
-#   --resource-group $RG_NAME \
-#   --name $APP_NAME \
-#   --src ../flaskapp.zip
-```
-
-### 6.7 – Verify Deployment
+### 6.6 – Verify Deployment
 ```bash
 # Display the app URL
 echo "https://$APP_NAME.azurewebsites.net"
