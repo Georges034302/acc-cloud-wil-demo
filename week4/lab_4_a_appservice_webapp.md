@@ -194,7 +194,20 @@ git push azure "$BRANCH":master
 ### 8.1 – Verify the app URL
 ```bash
 # Display the app URL
-echo "https://$APP_NAME.azurewebsites.net"
+APP_URL=$(
+  az webapp show \
+    --name webapp-773024041 \
+    --resource-group appservice-rg \
+    --query defaultHostName \
+    -o tsv
+)
+echo "$APP_URL"
+
+# Use the environment helper to open the host/browser from the container:
+"$BROWSER" "https://$APP_URL" || true
+
+# Quick check (HTTP headers)
+curl -I -s "https://$APP_URL" | sed -n '1,20p'
 ```
 
 Open the URL in your browser — you should see:
