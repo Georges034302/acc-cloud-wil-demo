@@ -54,17 +54,22 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 
 <details>
   <summary>Week 4: Building Decoupled Applications</summary>
+</details>
 
-  Learn how to design and deploy decoupled applications using Azure services.
+<details>
+  <summary>Week 4: App hosting, containers, and background workers</summary>
+
+  This week focuses on hosting web applications and microservices in Azure. You'll learn the basics of Azure App Service (Linux & Windows), deploying microservices with App Service and designing architecture for background processing using queues and worker roles.
 
   **Labs for this week:**
   - [lab_4_a_appservice_webapp.md](week4/lab_4_a_appservice_webapp.md):  
-    *Deploy a web application using Azure App Service.*
+    *Deploy a web application to Azure App Service, explore deployment slots, scale settings, and runtime diagnostics.*
   - [lab_4_b_microservice_deployment.md](week4/lab_4_b_microservice_deployment.md):  
-    *Deploy and manage microservices on Azure.*
+    *Containerize a small microservice, push the image to a container registry, and deploy to App Service (or AKS for scale). Learn health checks and basic service discovery patterns.*
   - [lab_4_c_web_queue_worker.md](week4/lab_4_c_web_queue_worker.md):  
-    *Implement the Web-Queue-Worker pattern using App Service, Storage Queue, and Azure Functions.*
+    *Implement the Web + Queue Worker pattern using App Service (or Functions) and Azure Storage Queues. Practice message processing, retries, and idempotency.*
 
+</details>
 </details>
 
 <details>
