@@ -19,10 +19,12 @@ Deploy a simple Python Flask web application using Azure App Service and underst
 ```bash
 # Define resource names and region
 RG_NAME="appservice-rg"
-PLAN_NAME="plan-demo$RANDOM"
-APP_NAME="webapp$RANDOM"
+PLAN_NAME="plan-demo-$RANDOM"
+APP_NAME="webapp-$RANDOM"
 LOCATION="australiaeast"
+# App Service plan SKU (e.g. B1, S1). Increase for scale.
 SKU="B1"
+# App Service runtime for Linux (format: RUNTIME|VERSION)
 RUNTIME="PYTHON|3.11"
 ```
 ---
@@ -30,10 +32,13 @@ RUNTIME="PYTHON|3.11"
 ## 🏗️ Step 2 – Register App Service Provider
 ```bash
 # Register the Microsoft.Web provider (required for App Service resources)
-az provider register --namespace Microsoft.Web
+az provider register \
+    --namespace Microsoft.Web
 
 # Verify registration status
-az provider show --namespace Microsoft.Web --query registrationState
+az provider show \
+    --namespace Microsoft.Web \
+    --query registrationState
 ```
 
 ---
@@ -41,7 +46,9 @@ az provider show --namespace Microsoft.Web --query registrationState
 ## 🧱 Step 3 – Create a Resource Group
 ```bash
 # Create a new resource group
-az group create --name $RG_NAME --location $LOCATION
+az group create \
+    --name $RG_NAME \
+    --location $LOCATION
 ```
 
 ---
@@ -49,19 +56,34 @@ az group create --name $RG_NAME --location $LOCATION
 ## ☁️ Step 4 – Create an App Service Plan
 ```bash
 # Create an App Service Plan (Linux, Basic tier)
-az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
+az appservice plan create \
+    --name $PLAN_NAME \
+    --resource-group $RG_NAME \
+    --sku $SKU \
+    --is-linux
 ```
 
 ---
 
 ## 🌐 Step 5 – Create the Web App
 ```bash
-# Create a new web app using the defined plan and Python runtime
-az webapp create   --name $APP_NAME   --resource-group $RG_NAME   --plan $PLAN_NAME   --runtime "$RUNTIME"   --deployment-local-git
-```
+# Create a new web app using the defined plan and Python runtime (Linux)
+az webapp create \
+    --name $APP_NAME \
+    --resource-group $RG_NAME \
+    --plan $PLAN_NAME \
+    --runtime "$RUNTIME"
 
-✅ Output includes the app URL and Git deployment URL, e.g.:
-`https://$APP_NAME.azurewebsites.net`
+# Configure local Git deployment and print the Git URL (you'll use this as the remote)
+az webapp deployment source config-local-git \
+    --name $APP_NAME \
+    --resource-group $RG_NAME \
+    --query url -o tsv
+
+# The previous command prints a URL like:
+# https://<username>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git
+# The app URL will be https://$APP_NAME.azurewebsites.net
+```
 
 ---
 
@@ -75,11 +97,8 @@ cd flaskapp
 ```
 
 ### 6.2 – Create the Application File
-```bash
-# Create a Python file named application.py
-nano application.py
-```
-**Paste the following code:**
+
+**Create a Python file named app.py  then paste the following code:**
 ```python
 from flask import Flask
 app = Flask(__name__)
@@ -88,6 +107,9 @@ app = Flask(__name__)
 def home():
     return "<h1>Welcome to Azure App Service!</h1>"
 
+# The block below is useful for local testing only. App Service will attempt to start
+# a WSGI server when it detects this layout; the platform's detection will choose
+# an appropriate server during deployment.
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
 ```
@@ -107,14 +129,27 @@ git commit -m "Initial commit – Flask web app"
 
 ### 6.5 – Add Azure Deployment Remote
 ```bash
-# Add Azure remote (replace <username> with your deployment username)
-git remote add azure https://<username>@$APP_NAME.scm.azurewebsites.net/$APP_NAME.git
+# Retrieve the local-git URL (if you didn't run the config-local-git step earlier)
+GIT_URL=$(az webapp deployment source config-local-git \
+    --name $APP_NAME \
+    --resource-group $RG_NAME \
+    --query url -o tsv)
+
+echo "Git remote: $GIT_URL"
+git remote add azure "$GIT_URL"
 ```
 
-### 6.6 – Push Code to Azure
+### 6.6 – Push Code to Azure (Oryx should auto-start gunicorn)
 ```bash
-# Push the code from your main branch to Azure
+# Push the code from your main branch to Azure (local git)
 git push azure main:master
+
+# Alternative: ZIP deploy (useful if you prefer not to use local Git)
+# zip -r ../flaskapp.zip .
+# az webapp deployment source config-zip \
+#   --resource-group $RG_NAME \
+#   --name $APP_NAME \
+#   --src ../flaskapp.zip
 ```
 
 ### 6.7 – Verify Deployment
@@ -130,7 +165,10 @@ Open the URL in your browser — you should see:
 ## 🔍 Step 7 – Test the Web App
 ```bash
 # Confirm app is running
-az webapp show --name $APP_NAME --resource-group $RG_NAME --query state
+az webapp show \
+    --name $APP_NAME \
+    --resource-group $RG_NAME \
+    --query state
 ```
 
 ---
@@ -138,7 +176,10 @@ az webapp show --name $APP_NAME --resource-group $RG_NAME --query state
 ## 🧼 Step 8 – Clean Up Resources (Optional)
 ```bash
 # Delete all created resources
-az group delete --name $RG_NAME --yes --no-wait
+az group delete \
+    --name $RG_NAME \
+    --yes \
+    --no-wait
 ```
 
 ---
