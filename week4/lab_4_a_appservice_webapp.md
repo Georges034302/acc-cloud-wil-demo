@@ -137,7 +137,7 @@ git commit -m "Initial commit – Flask web app" || true
 ```bash
 # (B) Enable SCM Basic Authentication (required for Local Git)
 az resource update \
-  --ids $(az webapp show -g appservice-rg -n webapp-773024041 --query "id" -o tsv)/basicPublishingCredentialsPolicies/scm \
+  --ids $(az webapp show -g $RG_NAME -n $APP_NAME --query "id" -o tsv)/basicPublishingCredentialsPolicies/scm \
   --set properties.allow=true
 ```
 
