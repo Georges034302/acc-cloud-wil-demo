@@ -31,7 +31,7 @@ az provider show \
 ## ⚙️ Step 1 – Define Variables
 ```bash
 RG_NAME="microservice-demo-rg"
-PLAN_NAME="microservice-plan"
+PLAN_NAME="microservice-plan$RANDOM"
 LOCATION="australiaeast"
 SKU="B1"
 RUNTIME="PYTHON|3.11"
