@@ -29,25 +29,49 @@ az provider show \
 ---
 
 ## ⚙️ Step 1 – Define Variables
+
+
+Set the following variables in your shell and store them into a `.env` file:
 ```bash
 RG_NAME="microservice-demo-rg"
-PLAN_NAME="microservice-plan$RANDOM"
+PLAN_NAME="microservice-plan25921"
 LOCATION="australiaeast"
 SKU="B1"
 RUNTIME="PYTHON|3.11"
-
 STUDENT_APP="studentservice$RANDOM"
 REPORT_APP="reportservice$RANDOM"
+
+cat <<EOF > .env
+RG_NAME="$RG_NAME"
+PLAN_NAME="$PLAN_NAME"
+LOCATION="$LOCATION"
+SKU="$SKU"
+RUNTIME="$RUNTIME"
+STUDENT_APP="$STUDENT_APP"
+REPORT_APP="$REPORT_APP"
+EOF
+```
+
+Then load the variables in your shell before running commands:
+```bash
+set -a
+source .env
+set +a
 ```
 
 ---
 
 ## 🧱 Step 2 – Create Resource Group and App Service Plan
+
+### 2.1 – Create Resource Group
 ```bash
 az group create \
     --name $RG_NAME \
     --location $LOCATION
+```
 
+### 2.2 – Create App Service Plan
+```bash
 az appservice plan create \
     --name $PLAN_NAME \
     --resource-group $RG_NAME \
@@ -68,6 +92,10 @@ mkdir studentservice && cd studentservice
 ```python
 from flask import Flask, jsonify
 app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Student Service is running!"
 
 @app.route('/student/<id>')
 def get_student(id):
@@ -99,13 +127,18 @@ az webapp create \
 ### 3.3 – Deploy via ZIP
 ```bash
 # Package the app
+cd studentservice
 zip -r ../studentservice-deploy.zip .
 
 # Upload ZIP to App Service
-az webapp deployment source config-zip \
+az webapp deploy \
     --resource-group "$RG_NAME" \
     --name "$STUDENT_APP" \
-    --src ../studentservice-deploy.zip
+    --src-path ../studentservice-deploy.zip \
+    --type zip
+
+# Restart the student serivce
+az webapp restart --name "$STUDENT_APP" --resource-group "$RG_NAME"
 
 # Optional cleanup
 rm ../studentservice-deploy.zip || true
@@ -128,6 +161,10 @@ from flask import Flask
 app = Flask(__name__)
 
 STUDENT_SERVICE_APP = os.environ.get("STUDENT_SERVICE_APP")
+
+@app.route('/')
+def home():
+    return "Report Service is running!"
 
 @app.route('/report/<id>')
 def get_report(id):
@@ -161,10 +198,18 @@ az webapp create \
 
 ### 4.3 – Configure Environment Variable
 ```bash
+# Set the STUDENT_SERVICE_APP environment variable for the Report Service
 az webapp config appsettings set \
     --resource-group $RG_NAME \
     --name $REPORT_APP \
     --settings STUDENT_SERVICE_APP=$STUDENT_APP
+
+# Set the PYTHONPATH environment variable for the Report Service app.
+# This tells Python where to look for additional packages, including those installed in the App Service's .python_packages directory.
+az webapp config appsettings set \
+  --resource-group "$RG_NAME" \  # Resource group containing the web app
+  --name "$REPORT_APP" \         # Name of the Report Service web app
+  --settings PYTHONPATH="/home/site/wwwroot/.python_packages/lib/site-packages"  # Path to extra Python packages
 ```
 
 ---
@@ -172,13 +217,18 @@ az webapp config appsettings set \
 ### 4.4 – Deploy via ZIP
 ```bash
 # Package the app
+cd reportservice
 zip -r ../reportservice-deploy.zip .
 
-# Deploy ZIP artifact
-az webapp deployment source config-zip \
+# Upload ZIP to App Service
+az webapp deploy \
     --resource-group "$RG_NAME" \
     --name "$REPORT_APP" \
-    --src ../reportservice-deploy.zip
+    --src-path ../reportservice-deploy.zip \
+    --type zip
+
+# Restart the report service
+az webapp restart --name "$REPORT_APP" --resource-group "$RG_NAME"
 
 # Optional cleanup
 rm ../reportservice-deploy.zip || true
