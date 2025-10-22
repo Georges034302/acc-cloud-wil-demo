@@ -54,10 +54,6 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 
 <details>
   <summary>Week 4: Building Decoupled Applications</summary>
-</details>
-
-<details>
-  <summary>Week 4: App hosting, containers, and background workers</summary>
 
   This week focuses on hosting web applications and microservices in Azure. You'll learn the basics of Azure App Service (Linux & Windows), deploying microservices with App Service and designing architecture for background processing using queues and worker roles.
 
