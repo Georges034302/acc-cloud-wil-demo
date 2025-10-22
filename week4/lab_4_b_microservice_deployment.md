@@ -1,6 +1,7 @@
 # 🧪 Lab 4-B – Deploy Two Microservices (HTTP Communication with Azure App Service)
 
-<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/09193f98-810f-4c3b-86d2-e059ea99cff4" />
+<img width="1024" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/5ab9979c-b072-41fb-aed4-551ce9482b48" />
+
 
 ## 🎯 Objective
 Deploy two independent Python microservices — **Student Service (A)** and **Report Service (B)** — as separate Azure Web Apps sharing one App Service Plan.  
