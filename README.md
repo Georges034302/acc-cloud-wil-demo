@@ -67,7 +67,7 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   - [lab_4_b_microservice_deployment.md](week4/lab_4_b_microservice_deployment.md):  
     *Containerize a small microservice, push the image to a container registry, and deploy to App Service (or AKS for scale). Learn health checks and basic service discovery patterns.*
   - [lab_4_c_web_queue_worker.md](week4/lab_4_c_web_queue_worker.md):  
-    *Implement the Web + Queue Worker pattern using App Service (or Functions) and Azure Storage Queues. Practice message processing, retries, and idempotency.*
+    *Implement the Web + Queue Worker pattern using App Service and Azure Storage Queues. Practice message processing, retries, and idempotency.*
 
 </details>
 </details>
