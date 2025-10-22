@@ -15,10 +15,14 @@ Each service maintains its own state and communicates securely using **HTTP/HTTP
 - Git installed
 - [Azure Portal](https://portal.azure.com)
 - **Registered App Service Provider (Microsoft.Web)**  
-  ```bash
-  az provider register --namespace Microsoft.Web
-  az provider show --namespace Microsoft.Web --query registrationState
-  ```
+    ```bash
+    az provider register \
+        --namespace Microsoft.Web
+
+    az provider show \
+        --namespace Microsoft.Web \
+        --query registrationState
+    ```
 
 ---
 
@@ -37,10 +41,17 @@ REPORT_APP="reportservice$RANDOM"
 ---
 
 ## 🧱 Step 2 – Create Resource Group and App Service Plan
-```bash
-az group create --name $RG_NAME --location $LOCATION
-
 az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
+```bash
+az group create \
+    --name $RG_NAME \
+    --location $LOCATION
+
+az appservice plan create \
+    --name $PLAN_NAME \
+    --resource-group $RG_NAME \
+    --sku $SKU \
+    --is-linux
 ```
 
 ---
@@ -76,7 +87,12 @@ flask
 
 ### 3.2 – Create Azure Web App
 ```bash
-az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $STUDENT_APP   --runtime "$RUNTIME"   --deployment-local-git
+az webapp create \
+    --resource-group $RG_NAME \
+    --plan $PLAN_NAME \
+    --name $STUDENT_APP \
+    --runtime "$RUNTIME" \
+    --deployment-local-git
 ```
 
 ---
@@ -86,8 +102,14 @@ az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $STUDE
 git init
 git add .
 git commit -m "Initial commit - Student Service"
-git remote add azure https://<username>@$STUDENT_APP.scm.azurewebsites.net/$STUDENT_APP.git
-git push azure main:master
+
+# Set the local-git remote (use the URL printed by az webapp deployment source config-local-git)
+git remote add azure \
+    "https://<username>@$STUDENT_APP.scm.azurewebsites.net/$STUDENT_APP.git"
+
+# Push the current branch to the app's master branch
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push azure "$BRANCH":master
 ```
 
 ✅ After deployment, test the service:  
@@ -138,14 +160,22 @@ requests
 
 ### 4.2 – Create Azure Web App
 ```bash
-az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $REPORT_APP   --runtime "$RUNTIME"   --deployment-local-git
+az webapp create \
+    --resource-group $RG_NAME \
+    --plan $PLAN_NAME \
+    --name $REPORT_APP \
+    --runtime "$RUNTIME" \
+    --deployment-local-git
 ```
 
 ---
 
 ### 4.3 – Set Environment Variable for Inter-Service Communication
 ```bash
-az webapp config appsettings set   --resource-group $RG_NAME   --name $REPORT_APP   --settings STUDENT_SERVICE_APP=$STUDENT_APP
+az webapp config appsettings set \
+    --resource-group $RG_NAME \
+    --name $REPORT_APP \
+    --settings STUDENT_SERVICE_APP=$STUDENT_APP
 ```
 
 ---
@@ -155,8 +185,12 @@ az webapp config appsettings set   --resource-group $RG_NAME   --name $REPORT_AP
 git init
 git add .
 git commit -m "Initial commit - Report Service"
-git remote add azure https://<username>@$REPORT_APP.scm.azurewebsites.net/$REPORT_APP.git
-git push azure main:master
+
+git remote add azure \
+    "https://<username>@$REPORT_APP.scm.azurewebsites.net/$REPORT_APP.git"
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push azure "$BRANCH":master
 ```
 
 ---
@@ -164,7 +198,8 @@ git push azure main:master
 ## 🌐 Step 5 – Test Communication Between Services
 Open in browser or use curl:  
 ```bash
-curl https://$REPORT_APP.azurewebsites.net/report/101
+curl \
+    "https://$REPORT_APP.azurewebsites.net/report/101"
 ```
 
 ✅ Expected Output:  
@@ -177,8 +212,13 @@ Student Ava is majoring in Computer Science
 ## 🧰 Step 6 – Troubleshooting and Logs
 If either service fails:
 ```bash
-az webapp log tail --name $STUDENT_APP --resource-group $RG_NAME
-az webapp log tail --name $REPORT_APP --resource-group $RG_NAME
+az webapp log tail \
+    --name $STUDENT_APP \
+    --resource-group $RG_NAME
+
+az webapp log tail \
+    --name $REPORT_APP \
+    --resource-group $RG_NAME
 ```
 
 Check:
@@ -190,7 +230,10 @@ Check:
 
 ## 🧼 Step 7 – Clean Up Resources (Optional)
 ```bash
-az group delete --name $RG_NAME --yes --no-wait
+az group delete \
+    --name $RG_NAME \
+    --yes \
+    --no-wait
 ```
 
 ---
