@@ -3,26 +3,27 @@
 <img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/09193f98-810f-4c3b-86d2-e059ea99cff4" />
 
 ## 🎯 Objective
-Deploy two independent Python microservices — **Student Service (Service A)** and **Report Service (Service B)** — as separate Azure Web Apps.  
-Each service maintains its own state and communicates securely using **HTTP/HTTPS**.
+Deploy two independent Python microservices — **Student Service (A)** and **Report Service (B)** — as separate Azure Web Apps sharing one App Service Plan.  
+Each service runs its own Flask API and communicates via HTTPS.
 
 ---
 
 ## 🧭 Prerequisites
-- Azure CLI (≥ 2.60)
-- Authenticated Azure session (`az login`)
-- Python 3.11 + Flask installed locally (optional)
-- Git installed
+- Azure CLI ≥ 2.60  
+- Logged in (`az login`) and subscription set  
+- Python 3.11 + Flask (optional local test)  
+- ZIP utility (`zip`)  
 - [Azure Portal](https://portal.azure.com)
-- **Registered App Service Provider (Microsoft.Web)**  
-    ```bash
-    az provider register \
-        --namespace Microsoft.Web
 
-    az provider show \
-        --namespace Microsoft.Web \
-        --query registrationState
-    ```
+Ensure the provider is registered:
+```bash
+az provider register \
+    --namespace Microsoft.Web
+
+az provider show \
+    --namespace Microsoft.Web \
+    --query registrationState
+```
 
 ---
 
@@ -41,7 +42,6 @@ REPORT_APP="reportservice$RANDOM"
 ---
 
 ## 🧱 Step 2 – Create Resource Group and App Service Plan
-az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
 ```bash
 az group create \
     --name $RG_NAME \
@@ -60,8 +60,7 @@ az appservice plan create \
 
 ### 3.1 – Create Local Folder and Files
 ```bash
-mkdir studentservice
-cd studentservice
+mkdir studentservice && cd studentservice
 ```
 
 **app.py**
@@ -91,32 +90,24 @@ az webapp create \
     --resource-group $RG_NAME \
     --plan $PLAN_NAME \
     --name $STUDENT_APP \
-    --runtime "$RUNTIME" \
-    --deployment-local-git
+    --runtime "$RUNTIME"
 ```
 
 ---
 
-### 3.3 – Deploy via Git
+### 3.3 – Deploy via ZIP
 ```bash
-git init
-git add .
-git commit -m "Initial commit - Student Service"
+# Package the app
+zip -r ../studentservice-deploy.zip .
 
-# Set the local-git remote (use the URL printed by az webapp deployment source config-local-git)
-git remote add azure \
-    "https://<username>@$STUDENT_APP.scm.azurewebsites.net/$STUDENT_APP.git"
+# Upload ZIP to App Service
+az webapp deployment source config-zip \
+    --resource-group "$RG_NAME" \
+    --name "$STUDENT_APP" \
+    --src ../studentservice-deploy.zip
 
-# Push the current branch to the app's master branch
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git push azure "$BRANCH":master
-```
-
-✅ After deployment, test the service:  
-`https://$STUDENT_APP.azurewebsites.net/student/101`  
-Expected Output:  
-```json
-{"id": "101", "name": "Ava", "major": "Computer Science"}
+# Optional cleanup
+rm ../studentservice-deploy.zip || true
 ```
 
 ---
@@ -126,17 +117,15 @@ Expected Output:
 ### 4.1 – Create Local Folder and Files
 ```bash
 cd ..
-mkdir reportservice
-cd reportservice
+mkdir reportservice && cd reportservice
 ```
 
 **app.py**
 ```python
-import os
-import requests
+import os, requests
 from flask import Flask
-
 app = Flask(__name__)
+
 STUDENT_SERVICE_APP = os.environ.get("STUDENT_SERVICE_APP")
 
 @app.route('/report/<id>')
@@ -164,13 +153,12 @@ az webapp create \
     --resource-group $RG_NAME \
     --plan $PLAN_NAME \
     --name $REPORT_APP \
-    --runtime "$RUNTIME" \
-    --deployment-local-git
+    --runtime "$RUNTIME"
 ```
 
 ---
 
-### 4.3 – Set Environment Variable for Inter-Service Communication
+### 4.3 – Configure Environment Variable
 ```bash
 az webapp config appsettings set \
     --resource-group $RG_NAME \
@@ -180,29 +168,35 @@ az webapp config appsettings set \
 
 ---
 
-### 4.4 – Deploy via Git
+### 4.4 – Deploy via ZIP
 ```bash
-git init
-git add .
-git commit -m "Initial commit - Report Service"
+# Package the app
+zip -r ../reportservice-deploy.zip .
 
-git remote add azure \
-    "https://<username>@$REPORT_APP.scm.azurewebsites.net/$REPORT_APP.git"
+# Deploy ZIP artifact
+az webapp deployment source config-zip \
+    --resource-group "$RG_NAME" \
+    --name "$REPORT_APP" \
+    --src ../reportservice-deploy.zip
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
-git push azure "$BRANCH":master
+# Optional cleanup
+rm ../reportservice-deploy.zip || true
 ```
 
 ---
 
-## 🌐 Step 5 – Test Communication Between Services
-Open in browser or use curl:  
+## 🌐 Step 5 – Test Inter-Service Communication
+Once both are deployed:
 ```bash
+# Simple request to the report endpoint
 curl \
     "https://$REPORT_APP.azurewebsites.net/report/101"
+
+# Open the Report App in the host browser (useful in dev containers)
+"$BROWSER" "https://$REPORT_APP.azurewebsites.net/report/101" || true
 ```
 
-✅ Expected Output:  
+✅ Expected:
 ```
 Student Ava is majoring in Computer Science
 ```
@@ -210,7 +204,6 @@ Student Ava is majoring in Computer Science
 ---
 
 ## 🧰 Step 6 – Troubleshooting and Logs
-If either service fails:
 ```bash
 az webapp log tail \
     --name $STUDENT_APP \
@@ -221,14 +214,14 @@ az webapp log tail \
     --resource-group $RG_NAME
 ```
 
-Check:
-- Both apps are **Running**
-- Correct environment variable `STUDENT_SERVICE_APP` set
-- Correct runtime (`PYTHON|3.11`)
+Verify:
+- Both apps **Running**
+- App setting `STUDENT_SERVICE_APP` is correct
+- Runtime = `PYTHON|3.11`
 
 ---
 
-## 🧼 Step 7 – Clean Up Resources (Optional)
+## 🧼 Step 7 – Clean Up (Optional)
 ```bash
 az group delete \
     --name $RG_NAME \
@@ -240,20 +233,17 @@ az group delete \
 
 ## ✅ Lab Summary
 
-| Step | Description | Output |
+| Step | Description | Result |
 |------|--------------|---------|
-| 1 | Define variables | Service names and plan |
-| 2 | Create RG + Plan | App Service Plan ready |
-| 3 | Deploy Student Service | Independent Flask API |
-| 4 | Deploy Report Service | Consumes Student API via HTTP |
-| 5 | Test communication | Returns formatted report |
-| 6 | Troubleshoot if needed | Use logs or portal |
-| 7 | Clean up (optional) | Deletes resources |
+| 1 |Define variables |Service names & plan set |
+| 2 |Create RG + plan |Shared App Service Plan ready |
+| 3 |Deploy Student Service |Flask API providing student data |
+| 4 |Deploy Report Service |Consumes Student API over HTTPS |
+| 5 |Test communication |Returns formatted student report |
+| 6 |Troubleshoot |Logs via CLI |
+| 7 |Clean up |Deletes resources |
 
 ---
 
 ### 🧩 Result
-You have deployed:
-- **Service A – Student Service:** Provides student data (API)  
-- **Service B – Report Service:** Consumes Service A via HTTP  
-Demonstrating **microservices with independent state and HTTP integration** using Azure App Service.
+Two Python Flask microservices are deployed under one App Service Plan using **ZIP deployment**, demonstrating **secure HTTP communication** between independent services hosted on Azure App Service.

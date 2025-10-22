@@ -19,7 +19,8 @@ Demonstrates the **Web–Queue–Worker pattern** for decoupled workloads using 
 - [Azure Portal](https://portal.azure.com)
 - **Microsoft.Web** provider registered:
   ```bash
-  az provider register --namespace Microsoft.Web
+  az provider register \
+    --namespace Microsoft.Web
   ```
 
 ---
@@ -42,16 +43,30 @@ WORKER_APP="queueworkerapp$RANDOM"
 ## 🧱 Step 2 – Create Resource Group and Storage Queue
 ```bash
 # Create resource group
-az group create --name $RG_NAME --location $LOCATION
+az group create \
+  --name $RG_NAME \
+  --location $LOCATION
 
 # Create storage account
-az storage account create   --name $STORAGE_ACCOUNT   --resource-group $RG_NAME   --location $LOCATION   --sku Standard_LRS
+az storage account create \
+  --name $STORAGE_ACCOUNT \
+  --resource-group $RG_NAME \
+  --location $LOCATION \
+  --sku Standard_LRS
 
 # Get connection string
-STORAGE_CONN_STRING=$(az storage account show-connection-string   --name $STORAGE_ACCOUNT   --resource-group $RG_NAME   --query connectionString -o tsv)
+STORAGE_CONN_STRING=$(
+  az storage account show-connection-string \
+    --name $STORAGE_ACCOUNT \
+    --resource-group $RG_NAME \
+    --query connectionString \
+    -o tsv
+)
 
 # Create queue
-az storage queue create   --account-name $STORAGE_ACCOUNT   --name $QUEUE_NAME
+az storage queue create \
+  --account-name $STORAGE_ACCOUNT \
+  --name $QUEUE_NAME
 ```
 
 ---
@@ -103,11 +118,23 @@ QUEUE_NAME=taskqueue
 
 ### 3.2 – Deploy to Azure
 ```bash
-az appservice plan create   --name $PLAN_NAME   --resource-group $RG_NAME   --sku $SKU   --is-linux
+az appservice plan create \
+  --name $PLAN_NAME \
+  --resource-group $RG_NAME \
+  --sku $SKU \
+  --is-linux
 
-az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $WEB_APP   --runtime "NODE|20-lts"
+az webapp create \
+  --resource-group $RG_NAME \
+  --plan $PLAN_NAME \
+  --name $WEB_APP \
+  --runtime "NODE|20-lts"
 
-az webapp config appsettings set   --resource-group $RG_NAME   --name $WEB_APP   --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" QUEUE_NAME="$QUEUE_NAME"
+az webapp config appsettings set \
+  --resource-group $RG_NAME \
+  --name $WEB_APP \
+  --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" \
+  QUEUE_NAME="$QUEUE_NAME"
 ```
 
 ---
@@ -118,8 +145,11 @@ git init
 echo "web: node index.js" > Procfile
 git add .
 git commit -m "Initial commit - Web Queue Producer"
-git remote add azure https://<username>@$WEB_APP.scm.azurewebsites.net/$WEB_APP.git
-git push azure main:master
+git remote add azure \
+  "https://<username>@$WEB_APP.scm.azurewebsites.net/$WEB_APP.git"
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push azure "$BRANCH":master
 ```
 
 ---
@@ -169,9 +199,17 @@ QUEUE_NAME=taskqueue
 
 ### 4.2 – Deploy to Azure
 ```bash
-az webapp create   --resource-group $RG_NAME   --plan $PLAN_NAME   --name $WORKER_APP   --runtime "NODE|20-lts"
+az webapp create \
+  --resource-group $RG_NAME \
+  --plan $PLAN_NAME \
+  --name $WORKER_APP \
+  --runtime "NODE|20-lts"
 
-az webapp config appsettings set   --resource-group $RG_NAME   --name $WORKER_APP   --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" QUEUE_NAME="$QUEUE_NAME"
+az webapp config appsettings set \
+  --resource-group $RG_NAME \
+  --name $WORKER_APP \
+  --settings STORAGE_CONN_STRING="$STORAGE_CONN_STRING" \
+  QUEUE_NAME="$QUEUE_NAME"
 ```
 
 ---
@@ -182,8 +220,11 @@ git init
 echo "web: node worker.js" > Procfile
 git add .
 git commit -m "Initial commit - Queue Worker"
-git remote add azure https://<username>@$WORKER_APP.scm.azurewebsites.net/$WORKER_APP.git
-git push azure main:master
+git remote add azure \
+  "https://<username>@$WORKER_APP.scm.azurewebsites.net/$WORKER_APP.git"
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git push azure "$BRANCH":master
 ```
 
 ---
@@ -198,9 +239,11 @@ git push azure main:master
 3. The **Worker App** continuously polls and logs processed tasks.
 
 4. View logs:
-   ```bash
-   az webapp log tail --name $WORKER_APP --resource-group $RG_NAME
-   ```
+  ```bash
+  az webapp log tail \
+    --name $WORKER_APP \
+    --resource-group $RG_NAME
+  ```
 
 ✅ You should see:
 ```
@@ -222,7 +265,10 @@ git push azure main:master
 
 ## 🧼 Step 7 – Clean Up Resources
 ```bash
-az group delete --name $RG_NAME --yes --no-wait
+az group delete \
+  --name $RG_NAME \
+  --yes \
+  --no-wait
 ```
 
 ---
