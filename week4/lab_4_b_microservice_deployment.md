@@ -34,7 +34,7 @@ az provider show \
 Set the following variables in your shell and store them into a `.env` file:
 ```bash
 RG_NAME="microservice-demo-rg"
-PLAN_NAME="microservice-plan25921"
+PLAN_NAME="microservice-plan$RANDOM"
 LOCATION="australiaeast"
 SKU="B1"
 RUNTIME="PYTHON|3.11"
@@ -200,25 +200,29 @@ az webapp create \
 ```bash
 # Set the STUDENT_SERVICE_APP environment variable for the Report Service
 az webapp config appsettings set \
-    --resource-group $RG_NAME \
-    --name $REPORT_APP \
-    --settings STUDENT_SERVICE_APP=$STUDENT_APP
+  --resource-group "$RG_NAME" \
+  --name "$REPORT_APP" \
+  --settings STUDENT_SERVICE_APP="$STUDENT_APP"
 
-# Set the PYTHONPATH environment variable for the Report Service app.
-# This tells Python where to look for additional packages, including those installed in the App Service's .python_packages directory.
 az webapp config appsettings set \
-  --resource-group "$RG_NAME" \  # Resource group containing the web app
-  --name "$REPORT_APP" \         # Name of the Report Service web app
-  --settings PYTHONPATH="/home/site/wwwroot/.python_packages/lib/site-packages"  # Path to extra Python packages
+  --resource-group "$RG_NAME" \
+  --name "$REPORT_APP" \
+  --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true
+
+az webapp config set \
+  --resource-group "$RG_NAME" \
+  --name "$REPORT_APP" \
+  --linux-fx-version "PYTHON|3.11"
 ```
 
 ---
 
 ### 4.4 – Deploy via ZIP
 ```bash
-# Package the app
+
+# Package only app.py and requirements.txt at the root of the ZIP
 cd reportservice
-zip -r ../reportservice-deploy.zip .
+zip -r ../reportservice-deploy.zip app.py requirements.txt
 
 # Upload ZIP to App Service
 az webapp deploy \
