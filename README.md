@@ -61,9 +61,11 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   - [lab_4_a_appservice_webapp.md](week4/lab_4_a_appservice_webapp.md):  
     *Deploy a web application to Azure App Service, explore deployment slots, scale settings, and runtime diagnostics.*
   - [lab_4_b_microservice_deployment.md](week4/lab_4_b_microservice_deployment.md):  
-    *Containerize a small microservice, push the image to a container registry, and deploy to App Service (or AKS for scale). Learn health checks and basic service discovery patterns.*
+    *Deploy two Python microservices to Azure App Service, enable secure HTTP communication, and troubleshoot deployment issues.*
   - [lab_4_c_web_queue_worker.md](week4/lab_4_c_web_queue_worker.md):  
     *Implement the Web + Queue Worker pattern using App Service and Azure Storage Queues. Practice message processing, retries, and idempotency.*
+  - [lab_4_d_secure-appservice-keyvault.md](week4/lab_4_d_secure-appservice-keyvault.md):  
+    *Securely inject secrets into Azure App Service using Azure Key Vault, Managed Identity, and App Settings—no hardcoded sensitive values.*
 
 </details>
 </details>
