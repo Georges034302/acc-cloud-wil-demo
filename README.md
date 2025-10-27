@@ -73,15 +73,19 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 <details>
   <summary>Week 5: Containers & App Service Integration</summary>
 
-  Deploy and manage containerized applications and integrate with Azure App Service.
+  Deploy and manage containerized applications, API gateways, and integrate with Azure App Service, Azure Container Instances, and Azure Container Apps.
 
   **Labs for this week:**
-  - [lab_5_a_local-docker-joke-api-demo.md](week5/lab_5_a_local-docker-joke-api-demo.md):  
-    *Build and run a Dockerized API locally.*
-  - [lab_5_b_app_service_container.md](week5/lab_5_b_app_service_container.md):  
-    *Deploy a containerized app using Azure App Service.*
-  - [lab_5_c_secure-appservice-keyvault-demo.md](week5/lab_5_c_secure-appservice-keyvault-demo.md):  
-    *Secure App Service apps with Azure Key Vault integration.*
+  - [lab_5_a_api_gateway.md](week5/lab_5_a_api_gateway.md):  
+    *Configure and deploy an API Gateway for secure routing and aggregation of microservices.*
+  - [lab_5_b_local-docker-deployment.md](week5/lab_5_b_local-docker-deployment.md):  
+    *Deploy a containerized application using Azure App Service for scalable web hosting.*
+  - [lab_5_c_app_service_container.md](week5/lab_5_c_app_service_container.md):  
+    *Build and run a Dockerized API locally for development and testing.*
+  - [lab_5_d_aci_contianer_deploy.md](week5/lab_5_d_aci_contianer_deploy.md):  
+    *Deploy containers to Azure Container Instances (ACI) for rapid, serverless compute.*
+  - [lab_5_e_container_apps_deploy.md](week5/lab_5_e_container_apps_deploy.md):  
+    *Deploy and manage microservices using Azure Container Apps for advanced orchestration.*
 
 </details>
 
