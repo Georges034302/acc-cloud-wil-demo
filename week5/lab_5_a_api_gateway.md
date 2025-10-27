@@ -1,7 +1,6 @@
 # 🧩 Lab 5-A: Deploy an API Gateway for the Joke API
 
-<img width="1024" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/2d820068-f24f-4d41-8d25-2b5f170bccdb" />
-
+<img width="930" height="400" alt="IMAGE" src="https://github.com/user-attachments/assets/73e3c100-4dff-4ae3-bfc7-ec2305637821" />
 
 ## 🎯 Objective
 Deploy and manage the **Joke API** through **Azure API Management (APIM)** to demonstrate the API Gateway pattern. The goal is to create multiple routes (endpoints), secure them, and test API traffic through a unified entry point.
