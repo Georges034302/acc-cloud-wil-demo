@@ -1,5 +1,7 @@
 # 🔐 Lab 4-D: Secure App Settings in App Service with Azure Key Vault
 
+<img width="1386" height="762" alt="ZIMG" src="https://github.com/user-attachments/assets/9dea5d09-abb4-405e-850f-57014089b054" />
+
 ## 🎯 Objective
 
 Securely inject secrets into **Azure App Service** using **Azure Key Vault**, **Managed Identity**, and **App Settings**—without hardcoding sensitive values.
