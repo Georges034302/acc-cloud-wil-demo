@@ -1,5 +1,5 @@
 
-# 🐋 Lan 5-A: Build and Run a Dockerized Joke API Locally
+# 🐋 Lab 5-B: Build and Run a Dockerized Joke API Locally
 
 ## 🎯 Objective
 
