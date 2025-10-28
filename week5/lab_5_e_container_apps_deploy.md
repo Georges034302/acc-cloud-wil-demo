@@ -31,8 +31,8 @@ Deploy a cool **Joke API** container image from scratch to **Azure Container App
 RG_NAME="aca-demo-rg"
 LOCATION="australiaeast"
 ACR_NAME="acajokesacr$RANDOM"
-ACA_ENV="jokeapi-env"
-ACA_APP="jokeapi-app"
+ACA_ENV="jokeapi-env$RANDOM"
+ACA_APP="jokeapi-app$RANDOM"
 LOG_WS="jokeapi-logs"
 IMAGE_NAME="webapp:v1"
 WEBAPP_DIR="webapp"
@@ -202,17 +202,12 @@ Use your browser to test routes:
 ### 1️⃣1️⃣ (Optional) Configure Autoscaling
 Add autoscaling based on concurrent requests:
 ```bash
-az containerapp revision set-mode \
+az containerapp update \
     --name "$ACA_APP" \
     --resource-group "$RG_NAME" \
-    --mode multiple
-
-az containerapp scale rule create \
-    --name jokeapi-scale \
-    --container-app "$ACA_APP" \
-    --resource-group "$RG_NAME" \
-    --custom-rule-type http \
-    --metadata concurrentRequests=5 \
+    --scale-rule-name http-rule \
+    --scale-rule-type http \
+    --scale-rule-metadata concurrentRequests=5 \
     --min-replicas 1 \
     --max-replicas 5
 ```
