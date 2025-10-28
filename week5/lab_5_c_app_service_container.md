@@ -1,5 +1,7 @@
 # 🐋 Lab 5-C: Local Container Build, Push to ACR, and Deploy to App Service
 
+<img width="948" height="711" alt="IMG" src="https://github.com/user-attachments/assets/738d0bc5-47af-4485-9da5-8df1ac53f92b" />
+
 ## 🎯 Objective
 
 Build a Docker container **locally**, push it to **Azure Container Registry (ACR)**, and deploy it to **Azure App Service** using **CLI**, **Portal**, and **ARM templates**.
