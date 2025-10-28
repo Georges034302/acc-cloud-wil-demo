@@ -1,6 +1,6 @@
 # ☸️ Lab 5-E: Deploy a Containerized API to Azure Container Apps (ACA)
 
-<img width="1248" height="687" alt="ZIMG" src="https://github.com/user-attachments/assets/1396ab65-cae2-41ed-a783-50cb9c1b077a" />
+<img width="1248" height="687" alt="ZIMG" src="https://github.com/user-attachments/assets/12ebf8f6-f175-420f-a63e-f90b5e20a81d" />
 
 ## 🎯 Objective
 Deploy a cool **Joke API** container image from scratch to **Azure Container Apps (ACA)**. This lab will guide you through creating all resources, building your app, and deploying it on a scalable, serverless platform.
