@@ -1,4 +1,4 @@
-# 🐋 Lab 5-B: Local Container Build, Push to ACR, and Deploy to App Service
+# 🐋 Lab 5-C: Local Container Build, Push to ACR, and Deploy to App Service
 
 ## 🎯 Objective
 
