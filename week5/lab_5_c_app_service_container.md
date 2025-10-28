@@ -22,8 +22,16 @@ Build a Docker container **locally**, push it to **Azure Container Registry (ACR
 #### 📁 Create Project Structure:
 
 ```bash
-mkdir webapp
-cd webapp
+WEBAPP_DIR="webapp"
+APP_NAME="webapp$RANDOM$RANDOM"
+RG_NAME="webapp-rg"
+LOCATION="australiaeast"
+ACR_NAME="webappacr$RANDOM"
+PLAN_NAME="webapp-plan$RANDOM"
+SKU="B1"
+
+mkdir "$WEBAPP_DIR"
+cd "$WEBAPP_DIR"
 touch app.py requirements.txt Dockerfile
 ```
 #### ✅ Expected Outcome:
@@ -91,15 +99,15 @@ az provider show --namespace Microsoft.Web --query "registrationState"
 #### 🔸 Create Resource Group using 
 
 ```bash
-az group create --name localbuild-rg --location australiaeast
+az group create --name "$RG_NAME" --location "$LOCATION"
 ```
 
 #### 🔸 Create ACR 
 
 ```bash
 az acr create \
-  --resource-group localbuild-rg \
-  --name localbuildacr123 \
+  --resource-group "$RG_NAME" \
+  --name "$ACR_NAME" \
   --sku Basic \
   --admin-enabled true
 ```
@@ -121,7 +129,7 @@ az acr create \
 #### 🔸 Login to ACR 
 
 ```bash
-az acr login --name localbuildacr123
+az acr login --name "$ACR_NAME"
 ```
 #### 🔸 Build the Docker image locally
 
@@ -132,13 +140,13 @@ docker build -t webapp:v1 .
 #### 🔸 Tag the Docker image
 
 ```bash
-docker tag webapp:v1 localbuildacr123.azurecr.io/webapp:v1
+docker tag webapp:v1 "$ACR_NAME.azurecr.io/webapp:v1"
 ```
 
 #### 🔸 Push the Docker image to ACR
 
 ```bash
-docker push localbuildacr123.azurecr.io/webapp:v1
+docker push "$ACR_NAME.azurecr.io/webapp:v1"
 ```
 
 #### ✅ The image is now hosted in ACR
@@ -147,42 +155,40 @@ docker push localbuildacr123.azurecr.io/webapp:v1
 
 ### 4️⃣ Deploy Container to Azure App Service
 
-#### 🔸 Create App Service plan
+#### 🔸 Create App Service plan (app plan name must be unique)
 
 ```bash
 az appservice plan create \
-  --name localbuild-plan \
-  --resource-group localbuild-rg \
+  --name "$PLAN_NAME" \
+  --resource-group "$RG_NAME" \
   --is-linux \
-  --sku B1
+  --sku "$SKU"
 ```
 
 #### 🔸 Create App Service app (app name must be unique)
 
 ```bash
-APP_NAME=localwebapp$RANDOM
-
 az webapp create \
-  --resource-group localbuild-rg \
-  --plan localbuild-plan \
-  --name $APP_NAME \
-  --deployment-container-image-name $APP_NAME.azurecr.io/webapp:v1
+  --resource-group "$RG_NAME" \
+  --plan "$PLAN_NAME" \
+  --name "$APP_NAME" \
+  --deployment-container-image-name "$ACR_NAME.azurecr.io/webapp:v1"
 ```
 
 #### 🔸 Enable Managed Identity on the App Service
 
 ```bash
 az webapp identity assign \
-  --name $APP_NAME \
-  --resource-group localbuild-rg
+  --name "$APP_NAME" \
+  --resource-group "$RG_NAME"
 ```
 
 #### 🔸 Get the Principal ID of the App Service
 
 ```bash
 PRINCIPAL_ID=$(az webapp identity show \
-  --name $APP_NAME \
-  --resource-group localbuild-rg \
+  --name "$APP_NAME" \
+  --resource-group "$RG_NAME" \
   --query principalId \
   --output tsv)
 ```
@@ -191,8 +197,8 @@ PRINCIPAL_ID=$(az webapp identity show \
 
 ```bash
 az role assignment create \
-  --assignee $PRINCIPAL_ID \
-  --scope $(az acr show --name localbuildacr123 --query id --output tsv) \
+  --assignee "$PRINCIPAL_ID" \
+  --scope $(az acr show --name "$ACR_NAME" --query id --output tsv) \
   --role AcrPull
 ```
 
@@ -200,20 +206,25 @@ az role assignment create \
 
 ```bash
 az webapp config container set \
-  --name $APP_NAME \
-  --resource-group localbuild-rg \
-  --docker-custom-image-name localbuildacr123.azurecr.io/webapp:v1 \
-  --docker-registry-server-url https://localbuildacr123.azurecr.io
+  --name "$APP_NAME" \
+  --resource-group "$RG_NAME" \
+  --docker-custom-image-name "$ACR_NAME.azurecr.io/webapp:v1" \
+  --docker-registry-server-url "https://$ACR_NAME.azurecr.io"
 ```
 
 ---
+
 ### 5️⃣ Test the Deployment
 
 Open your browser and navigate to:
 
-```
-echo $APP_NAME
-https://$APP_NAME.azurewebsites.net
+```bash
+# Click on the app link to open
+echo "$APP_NAME"
+echo "https://$APP_NAME.azurewebsites.net"
+
+# Open in the current web-browser
+"$BROWSER" "https://$APP_NAME.azurewebsites.net"
 ```
 
 ✅ **You should see your running app.**
@@ -371,7 +382,7 @@ az deployment group create \
 ## 🧼 Clean Up (Optional)
 
 ```bash
-az group delete --name localbuild-rg --yes --no-wait
+az group delete --name "$RG_NAME" --yes --no-wait
 ```
 
 ✅ **Demo complete – You built a Docker image locally, pushed to ACR, and deployed to Azure App Service via CLI, Portal, and ARM.**
