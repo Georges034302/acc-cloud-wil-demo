@@ -1,5 +1,6 @@
-
 # 🐋 Lab 5-B: Build and Run a Dockerized Joke API Locally
+
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/20592bad-de74-4347-9568-002a84367afd" />
 
 ## 🎯 Objective
 
