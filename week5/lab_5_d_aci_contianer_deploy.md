@@ -131,10 +131,11 @@ az container create \
 	--registry-password $(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv) \
 	--ports 80 \
 	--dns-name-label "$DNS_LABEL" \
-	--location "$LOCATION"
+	--location "$LOCATION" \
+	--os-type Linux
 ```
 ✅ This will create a publicly accessible endpoint like:
-`https://$DNS_LABEL.$LOCATION.azurecontainer.io`
+`http://$DNS_LABEL.$LOCATION.azurecontainer.io`
 
 
 ####  Verify Deployment
@@ -155,8 +156,11 @@ Once `Status` = **Running**, open the FQDN in your browser.
 Use your browser or `curl`:
 
 ```bash
-"$BROWSER" "https://$DNS_LABEL.$LOCATION.azurecontainer.io/joke"
-"$BROWSER" "https://$DNS_LABEL.$LOCATION.azurecontainer.io/jokes"
+# Get a random joke
+"$BROWSER" "http://$DNS_LABEL.$LOCATION.azurecontainer.io/joke"
+
+# Get all jokes
+"$BROWSER" "http://$DNS_LABEL.$LOCATION.azurecontainer.io/jokes"
 ```
 ✅ You should see JSON responses from your containerized Joke API.
 
