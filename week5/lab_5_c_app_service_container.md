@@ -1,6 +1,6 @@
 # 🐋 Lab 5-C: Local Container Build, Push to ACR, and Deploy to App Service
 
-<img width="948" height="711" alt="IMG" src="https://github.com/user-attachments/assets/738d0bc5-47af-4485-9da5-8df1ac53f92b" />
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/70747466-64d9-4bcd-8c33-19f46a5924bf" />
 
 ## 🎯 Objective
 
