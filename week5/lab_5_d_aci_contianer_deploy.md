@@ -1,4 +1,6 @@
-# ⚙️ Lab 5-D: Deploy the Container to Azure Container Instances (ACI)
+# ⚙️ Lab 5-D: Deploy a container to Azure Container Instances (ACI)
+
+<img width="1536" height="1024" alt="ZIMG" src="https://github.com/user-attachments/assets/baf2b3f6-ce3f-437a-9d92-100566921389" />
 
 ## 🎯 Objective
 Deploy the **Joke API** container image from **Azure Container Registry (ACR)** to **Azure Container Instances (ACI)**.  
