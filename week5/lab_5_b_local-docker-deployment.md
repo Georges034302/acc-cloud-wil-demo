@@ -7,12 +7,14 @@ Build and run a fun, lightweight **Joke API** using **Flask** and **Docker**, co
 
 ---
 
+
 ## 💡 App Idea: **Joke REST API**
 
-A small REST API that returns a random joke from a static list. It has a single endpoint:
+A small REST API that returns jokes from a static list. It exposes two endpoints:
 
 ```
-GET /joke
+GET /jokes   # Returns all jokes as a list
+GET /joke    # Returns a single random joke
 ```
 
 ---
@@ -44,6 +46,7 @@ joke-api/
 ├── Dockerfile
 ```
 
+
 #### 🔹 `app.py`
 
 ```python
@@ -61,12 +64,10 @@ jokes = [
 
 @app.route("/jokes")
 def get_jokes():
-    # Return all jokes as a formatted JSON list
     return jsonify({"jokes": jokes})
 
 @app.route("/joke")
 def get_joke():
-    # Return a single random joke
     return jsonify({"joke": random.choice(jokes)})
 
 if __name__ == "__main__":
@@ -111,19 +112,35 @@ docker build -t joke-api:v1 .
 docker run -d -p 5000:5000 --name joke-api-local joke-api:v1
 ```
 
-✅ Open your browser or use `curl`:
 
-```
-http://localhost:5000/joke
-```
+✅ Test your API endpoints:
 
-Example Output:
+- List all jokes:
+    ```bash
+    "$BROWSER" "http://localhost:5000/jokes"
+    ```
+    Example output:
+    ```json
+    {
+        "jokes": [
+            "Why don’t developers like nature? It has too many bugs.",
+            "Why did the developer go broke? Because he used up all his cache.",
+            "Why do programmers prefer dark mode? Because light attracts bugs.",
+            "What is a programmer’s favorite hangout place? The Foo Bar."
+        ]
+    }
+    ```
 
-```json
-{
-  "joke": "Why do programmers prefer dark mode? Because light attracts bugs."
-}
-```
+- Get a random joke:
+    ```bash
+    "$BROWSER" "http://localhost:5000/joke"
+    ```
+    Example output:
+    ```json
+    {
+        "joke": "Why do programmers prefer dark mode? Because light attracts bugs."
+    }
+    ```
 
 ---
 
