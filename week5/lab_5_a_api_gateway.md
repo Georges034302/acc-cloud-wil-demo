@@ -29,7 +29,7 @@ az group create \
 ## 2️⃣ Create Azure API Management (APIM) Instance
 ```bash
 APIM_NAME="jokeapi-gateway$RANDOM"
-PUBLISHER_EMAIL="georges.boughantous@gmail.com"
+PUBLISHER_EMAIL="<your email>"
 PUBLISHER_NAME="Joke API Gateway"
 APIM_SKU="Consumption"
 
