@@ -1,4 +1,5 @@
 # Lab 6-B: Student CSV Processor — Azure Function App
+<img width="1536" height="1024" alt="6-B" src="https://github.com/user-attachments/assets/31d19e48-d925-4002-b67f-aa922427d0c0" />
 
 ## Objective
 Create a **serverless data ingestion pipeline** using **Azure Functions** with a **Blob Storage trigger** and **Table Storage output**.  
