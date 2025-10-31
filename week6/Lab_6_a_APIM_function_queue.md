@@ -1,5 +1,6 @@
-
 # Lab 6-A: Expose an HTTP-Triggered Node.js Azure Function via API Management with Queue Output Binding
+
+<img width="1467" height="912" alt="6-A" src="https://github.com/user-attachments/assets/9c3e9637-3b63-48b8-bd9b-ec69aefa0a58" />
 
 ## Objective
 Create a **Node.js HTTP-triggered Azure Function** that writes messages into **Azure Storage Queue**, then expose it through **Azure API Management (APIM)** **without** a subscription key. Region is fixed to **`australiaeast`**. All resources are created from scratch in an isolated resource group.
