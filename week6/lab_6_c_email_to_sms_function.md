@@ -1,5 +1,5 @@
 
-# Demo Guide: Real-Time Email to SMS Notification Using Microsoft Graph and Azure Function
+# Lab 6-C: Real-Time Email to SMS Notification Using Microsoft Graph and Azure Function
 
 ## 🎯 Objective
 In this lab, you'll build an event-driven system using a Node.js Azure Function that listens for new emails via a Microsoft Graph webhook and sends an SMS alert using Twilio with the sender and subject of the email.
