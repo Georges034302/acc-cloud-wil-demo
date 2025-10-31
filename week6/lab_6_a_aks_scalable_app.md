@@ -1,4 +1,4 @@
-# ☸️ Demo Guide: Deploy a Scalable App Using Azure Kubernetes Service (AKS)
+# ☸️ Lab 6-A: Deploy a Scalable App Using Azure Kubernetes Service (AKS)
 
 ## 🎯 Objective
 
