@@ -92,15 +92,17 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 <details>
   <summary>Week 6: Serverless & Event-Driven Architectures</summary>
 
-  Implement serverless and event-driven solutions using Azure Functions, Logic Apps, and AKS.
+  Implement serverless and event-driven solutions using Azure Functions, API Management, AKS, and Microsoft Graph.
 
   **Labs for this week:**
-  - [lab_6_a_aks_scalable_app.md](week6/lab_6_a_aks_scalable_app.md):  
-    *Deploy and scale applications on Azure Kubernetes Service (AKS).*
+  - [Lab_6_a_APIM_function_queue.md](week6/Lab_6_a_APIM_function_queue.md):  
+    *Expose an HTTP-triggered Node.js Azure Function via API Management with Queue output binding. No subscription key required.*
   - [lab_6_b_azure_function_blob_trigger.md](week6/lab_6_b_azure_function_blob_trigger.md):  
-    *Create and deploy a Node.js Azure Function app.*
-  - [lab_6_c_email_to_sms_function.md](week6/lab_6_c_email_to_sms_function.md):  
-    *Automate email processing and queue integration using Logic Apps and Functions.*
+    *Serverless data ingestion pipeline: Blob Storage trigger parses CSV and inserts records into Azure Table Storage.*
+  - [lab_6_c_aks_scalable_app.md](week6/lab_6_c_aks_scalable_app.md):  
+    *Deploy and scale a containerized application on Azure Kubernetes Service (AKS) using CLI, Portal, and ARM.*
+  - [lab_6_d_email_to_sms_function.md](week6/lab_6_d_email_to_sms_function.md):  
+    *Event-driven serverless system: Azure Function listens for new emails via Microsoft Graph webhook and sends SMS alerts using Twilio.*
 
 </details>
 
