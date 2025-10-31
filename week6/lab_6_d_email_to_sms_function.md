@@ -1,4 +1,5 @@
 # 📩 Lab 6-D: Real-Time Email to SMS Notification Using Microsoft Graph and Azure Function
+<img width="1382" height="913" alt="6-d" src="https://github.com/user-attachments/assets/a8a70d3a-eb5c-4764-afb1-643d4c6fed41" />
 
 ## 🎯 Objective
 Build an **event-driven serverless system** using **Azure Functions (Node.js)** that listens for new emails via a **Microsoft Graph webhook** and sends an **SMS alert** using **Twilio**.  
