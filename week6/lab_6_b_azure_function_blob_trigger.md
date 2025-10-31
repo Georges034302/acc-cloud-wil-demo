@@ -1,4 +1,4 @@
-# 📘 Demo Guide: Student CSV Processor — Azure Function App
+# 📘 Lan 6-B: Student CSV Processor — Azure Function App
 
 This project demonstrates a serverless solution using an Azure Blob-triggered JavaScript function. When a CSV file is uploaded to a designated Blob container, the function is triggered automatically. It parses student records and inserts them into Azure Table Storage for further use (e.g., analytics, dashboards, auditing).
 
