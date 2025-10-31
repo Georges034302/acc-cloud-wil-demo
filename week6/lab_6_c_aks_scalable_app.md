@@ -1,5 +1,5 @@
-
 # ☸️ Lab 6-C: Deploy a Scalable App Using Azure Kubernetes Service (AKS)
+
 
 ## 🎯 Objective
 Provision an **Azure Kubernetes Service (AKS)** cluster, deploy a sample containerized application, and scale it manually and automatically using Azure CLI, Portal, and Infrastructure as Code (ARM).
