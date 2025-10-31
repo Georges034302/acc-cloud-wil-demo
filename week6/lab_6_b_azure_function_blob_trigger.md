@@ -1,135 +1,248 @@
-# 📘 Demo Guide: Student CSV Processor — Azure Function App
+# Lab 6-B: Student CSV Processor — Azure Function App
 
-This project demonstrates a serverless solution using an Azure Blob-triggered JavaScript function. When a CSV file is uploaded to a designated Blob container, the function is triggered automatically. It parses student records and inserts them into Azure Table Storage for further use (e.g., analytics, dashboards, auditing).
-
----
-
-## 📂 Project Structure
-
-```
-config-app.sh                   # Bash script to configure Azure resources
-README.md                       # Project documentation
-students.csv                    # Sample CSV input
-upload.sh                       # Bash script to upload a test CSV
-
-student-app/
-└── src
-    ├── function.json
-    └── functions
-        ├── index.js
-        ├── insertStudent.js
-        ├── parseCsv.js
-        └── tableClient.js
-```
+## Objective
+Create a **serverless data ingestion pipeline** using **Azure Functions** with a **Blob Storage trigger** and **Table Storage output**.  
+When a CSV file is uploaded to a designated container, the function automatically parses and inserts each record into an Azure Table.
 
 ---
 
-## 🧰 Technology Stack
-
-- **Azure Functions v4** (Node.js runtime)
-- **Azure Blob Storage** — for CSV uploads
-- **Azure Table Storage** — for structured student data
-- **JavaScript (Node.js 18+)**
-- **NPM Packages**: `@azure/data-tables`, `csv-parse`, `uuid`
+## Estimated Duration
+**60 minutes**
 
 ---
 
-## 🚀 Initial Setup
-
-- **Create the Azure Function app project**
-  ```bash
-  func init student-app --worker-runtime node --language javascript
-  ```
-
-- **Create a new Blob trigger function**
-  ```bash
-  cd student-app
-  func new --name ProcessStudentCSV --template "Azure Blob Storage trigger"
-  ```
----
-
-## ✅ Requirements
-
-### 🔧 Local Prerequisites
-
-- **Azure Functions Core Tools v4**
-  ```bash
-  npm i -g azure-functions-core-tools@4 --unsafe-perm true
-  func --version  # Should start with 4.x
-  ```
-
-- **Node.js 18 or later**
-- **Install project dependencies**
-  ```bash
-  cd student-app
-  npm install
-  ```
-
-- **Install required NPM packages**
-  ```bash
-  cd student-app
-  npm install @azure/data-tables csv-parse uuid
-  ```
----
-
-### ☁️ Azure Prerequisites
-
-- **Azure Subscription**
-- **Azure Storage Account & Blob Container**
-  - Automatically created via `config-app.sh`
-- **Role Assignment:**
-  - `Storage Blob Data Contributor`
-  - `Storage Table Data Contributor`
-  Assign these roles to your user (using Azure CLI or Azure Portal):
-  ```bash
-  az role assignment create --assignee <your-user-object-id> \
-      --role "<role>" \
-      --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Storage/storageAccounts/<storage-account-name>"
-  ```
+## Prerequisites
+- Active Azure Subscription  
+- Azure CLI and Azure Functions Core Tools v4 installed  
+- Node.js (v18 or later) installed  
+- Azure Storage Explorer (optional, for verification)
 
 ---
 
-## ⚙️ Setup and Deployment
-
-### 1. Configure Azure Resources
-Run the setup script to provision a resource group, storage account, container, and function app:
+## 1️⃣ Create Resource Group and Storage Account
 
 ```bash
-bash config-app.sh
+LOCATION="australiaeast"
+RG="rg-student-func"
+STO="ststudent$RANDOM"
+
+az group create --name $RG --location $LOCATION
+
+az storage account create \
+  --name $STO \
+  --resource-group $RG \
+  --location $LOCATION \
+  --sku Standard_LRS
 ```
 
-### 2. Deploy to Azure
-Publish the function to Azure:
+---
+
+## 2️⃣ Initialize Function App Project (Node.js)
 
 ```bash
+func init student-app --worker-runtime node --language javascript
 cd student-app
-func azure functionapp publish student-app --javascript
 ```
 
 ---
 
-## 3. Test the Function
-
-After deployment, run the upload script to trigger the function by uploading a sample CSV file:
+## 3️⃣ Create a Blob Trigger Function
 
 ```bash
-bash upload.sh
+func new --name ProcessStudentCSV --template "Azure Blob Storage trigger"
 ```
 
-Check the Function App logs (via Azure Portal or `func azure functionapp log-stream`) to verify successful execution and record insertion.
+This creates:
+```
+student-app/
+ └── ProcessStudentCSV/
+     ├── function.json
+     └── index.js
+```
 
 ---
 
-## 📌 Notes
+## 4️⃣ Add Required NPM Packages
 
-- The function is triggered by any CSV file uploaded to the `student-files` container.
-- The trigger pattern in `function.json` is configured as:
-  ```json
-  {
-    "path": "student-files/{name}",
-    ...
+```bash
+npm install @azure/data-tables csv-parse uuid
+```
+
+---
+
+## 5️⃣ Update `function.json`
+
+Edit to define trigger and Table Storage output:
+
+```json
+{
+  "bindings": [
+    {
+      "name": "myBlob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "student-files/{name}",
+      "connection": "AzureWebJobsStorage"
+    }
+  ],
+  "scriptFile": "index.js"
+}
+```
+
+---
+
+## 6️⃣ Edit `index.js`
+
+Replace existing code with:
+
+```javascript
+const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
+const parse = require("csv-parse/sync").parse;
+const { v4: uuidv4 } = require("uuid");
+
+module.exports = async function (context, myBlob) {
+  context.log("Processing CSV upload...");
+
+  const csvContent = myBlob.toString("utf8");
+  const records = parse(csvContent, { columns: true, skip_empty_lines: true });
+
+  const account = process.env.STORAGE_ACCOUNT_NAME;
+  const accountKey = process.env.STORAGE_ACCOUNT_KEY;
+  const tableName = "StudentGrades";
+
+  const credential = new AzureNamedKeyCredential(account, accountKey);
+  const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
+
+  await client.createTable();
+
+  for (const record of records) {
+    const entity = {
+      partitionKey: "Grades",
+      rowKey: uuidv4(),
+      Name: record.Name,
+      Subject: record.Subject,
+      Grade: record.Grade
+    };
+    await client.createEntity(entity);
   }
-  ```
-- Each student record is parsed and inserted individually into the `StudentGrades` table.
+
+  context.log(`✅ Inserted ${records.length} records.`);
+};
+```
 
 ---
+
+## 7️⃣ Create the Target Table
+
+```bash
+az storage table create \
+  --name StudentGrades \
+  --account-name $STO \
+  --resource-group $RG
+```
+
+---
+
+## 8️⃣ Create Blob Container
+
+```bash
+az storage container create \
+  --name student-files \
+  --account-name $STO
+```
+
+---
+
+## 9️⃣ Configure Local Settings
+
+Edit **`local.settings.json`**:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=<storage-name>;AccountKey=<key>;EndpointSuffix=core.windows.net",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "STORAGE_ACCOUNT_NAME": "<storage-name>",
+    "STORAGE_ACCOUNT_KEY": "<key>"
+  }
+}
+```
+
+Retrieve keys:
+
+```bash
+az storage account keys list --resource-group $RG --account-name $STO -o table
+```
+
+---
+
+## 🔟 Run Locally
+
+```bash
+func start
+```
+
+Upload `students.csv` into the `student-files` container.  
+The function will parse and insert data into the `StudentGrades` table.
+
+---
+
+## 1️⃣1️⃣ Deploy to Azure
+
+```bash
+FUNC_APP="func-student-$RANDOM"
+
+az functionapp create \
+  --resource-group $RG \
+  --consumption-plan-location $LOCATION \
+  --name $FUNC_APP \
+  --storage-account $STO \
+  --runtime node \
+  --functions-version 4
+
+func azure functionapp publish $FUNC_APP
+```
+
+---
+
+## 1️⃣2️⃣ Test the Function
+
+Upload a CSV to trigger it:
+
+```bash
+az storage blob upload \
+  --account-name $STO \
+  --container-name student-files \
+  --file students.csv \
+  --name students.csv
+```
+
+Verify inserts in **Table Storage → StudentGrades**.
+
+---
+
+## ✅ Expected Result
+
+- Function triggers automatically on CSV upload.  
+- Each record is inserted into **Azure Table Storage**.  
+- Logs confirm successful parsing and insertion.
+
+---
+
+## 🧹 Clean Up
+
+```bash
+az group delete --name $RG --yes --no-wait
+```
+
+---
+
+## Success Criteria
+
+| Step | Verification |
+|------|---------------|
+| Blob trigger fires upon file upload | ✅ |
+| Function parses CSV correctly | ✅ |
+| Table `StudentGrades` populated with new entities | ✅ |
+| Function deploys successfully in `australiaeast` | ✅ |
