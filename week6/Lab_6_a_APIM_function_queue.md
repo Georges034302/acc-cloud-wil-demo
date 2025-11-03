@@ -44,21 +44,28 @@ az group create \
 ## 2) Create the Function App (Azure Portal)
 
 1. **Create a resource → Function App**
+   - Plan: **Consumption (Serverless)**
 2. **Basics**
    - Resource Group: `rg-func-apim-<UNIQ>`
    - Name: `func-httpq-<UNIQ>`
-   - Publish: **Code**
-   - Runtime: **Node.js 18 LTS**
+   - OS: **Windows**
+   - Runtime: **Node.js 20 LTS**
    - Region: **Australia East**
-3. **Hosting**
-   - Storage account: **Create new** → `stfunc<UNIQ>`
-   - OS: **Linux**
-   - Plan: **Consumption (Serverless)**
-4. **Monitoring**
+3. **Storage**
+   - Storage account: **Create new** → `stfunc<UNIQ>` (or choose suggested storage name)
+4. **Networking**
+   - (Default settings)
+5. **Monitoring**
    - Application Insights: **Enable** (create new)
-5. **Review + Create → Create**
+6. **Deployment**
+   - (Default settings)
+8. **Authentication**
+   - (Default settings)
+9. **Tags**
+   - (Default settings)
+10. **Review + Create → Create**
 
-Wait until deployment completes.
+> Wait until deployment completes, then proceed to step 3.
 
 ---
 
