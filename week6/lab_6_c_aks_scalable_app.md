@@ -9,21 +9,20 @@ Provision an **Azure Kubernetes Service (AKS)** cluster, deploy a sample contain
 
 ## 1️⃣ Create Resource Group and AKS Cluster
 
-### 🔹 CLI Method
-
-## Variables
 ```bash
+# Set location, resource group, and AKS cluster name variables
 LOCATION="australiaeast"
 RG="aks-lab-rg"
 AKSNAME="aks-demo-cluster"
 ```
+
 ```bash
-LOCATION="australiaeast"
-RG="aks-lab-rg"
-AKSNAME="aks-demo-cluster"
-
+# Create the resource group in Azure
 az group create --name $RG --location $LOCATION
+```
 
+```bash
+# Create the AKS cluster with monitoring enabled and 2 nodes
 az aks create \
   --resource-group $RG \
   --name $AKSNAME \
@@ -75,9 +74,10 @@ Save the following as `aks-arm.json`:
 }
 ```
 
-Deploy using CLI:
+### Deploy using CLI:
 
 ```bash
+# Deploy the AKS cluster using the ARM template
 az deployment group create \
   --template-file aks-arm.json
 ```
@@ -87,13 +87,14 @@ az deployment group create \
 ## 2️⃣ Connect to AKS Cluster
 
 ```bash
+# Connect your local kubectl to the AKS cluster
 az aks get-credentials \
   --resource-group $RG \
   --name $AKSNAME
 ```
 
-Verify connection:
-
+```bash
+# Verify connection to AKS cluster
 kubectl get nodes
 ```
 
@@ -101,38 +102,51 @@ kubectl get nodes
 
 ## 3️⃣ Deploy the Sample Application
 
-Deploy a simple Nginx app:
-
 ```bash
+# Deploy a sample Nginx application
 kubectl create deployment webdemo --image=nginx
 kubectl expose deployment webdemo --port=80 --type=LoadBalancer
 ```
 
-Check the service status:
-
 ```bash
+# Check the service status and get external IP
 kubectl get svc webdemo
 ```
 
-Once the `EXTERNAL-IP` is assigned, open it in a web browser to confirm the Nginx welcome page.
 ---
 
-## 4️⃣ Scale the Application
+## 4️⃣ Test the Sample Application
+```bash
+# Get the external IP address of the Nginx service dynamically
+EXTERNAL_IP=$(kubectl get svc webdemo --output=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+echo "Nginx External IP: $EXTERNAL_IP"
+
+# Open the Nginx welcome page in your browser (Linux)
+if [ -n "$EXTERNAL_IP" ]; then
+  "$BROWSER" "http://$EXTERNAL_IP"
+else
+  echo "External IP not assigned yet. Please check again in a few moments."
+fi
+```
+
+---
+
+## 5️⃣ Scale the Application
 
 ### 🔹 Manual Scaling (via CLI)
 
 ```bash
+# Manually scale the webdemo deployment to 4 replicas
 kubectl scale deployment webdemo --replicas=4
 kubectl get pods -o wide
 ```
 
-You should now see **4 replicas** of the webdemo pods.
+> You should now see **4 replicas** of the webdemo pods.
 
 ### 🔹 Autoscaling (via CLI)
 
-Enable AKS autoscaler at the cluster level:
-
 ```bash
+# Enable cluster autoscaler for AKS
 az aks update \
   --resource-group $RG \
   --name $AKSNAME \
@@ -141,23 +155,22 @@ az aks update \
   --max-count 5
 ```
 
-Create a Horizontal Pod Autoscaler (HPA):
-
 ```bash
+# Create a Horizontal Pod Autoscaler (HPA) for webdemo
 kubectl autoscale deployment webdemo \
   --cpu-percent=50 \
   --min=2 \
   --max=5
 ```
 
-View autoscaler status:
-
 ```bash
+# View autoscaler status
 kubectl get hpa
 ```
 
+---
 
-## 5️⃣ Monitor the Cluster (Portal)
+## 6️⃣ Monitor the Cluster (Portal)
 
 1. Navigate to **Azure Portal → Monitor → Insights → Containers**
 2. Review metrics:
@@ -165,10 +178,12 @@ kubectl get hpa
    - Pod count and scaling activity
    - LoadBalancer and request throughput
 
+---
 
-## 6️⃣ Clean Up Resources
+## 🧹 Clean Up Resources
 
 ```bash
+# Delete the resource group and all resources
 az group delete --name $RG --yes --no-wait
 ```
 
