@@ -31,7 +31,7 @@ az aks create \
   --generate-ssh-keys
 ```
 
-### 🔹 Portal Method
+### 🔹 Portal Method (Optional)
 
 1. Go to **Azure Portal → Kubernetes Services → + Create**
 2. **Basics:**
@@ -43,7 +43,7 @@ az aks create \
 3. **Monitoring:** Enable Container Insights  
 4. **Review + Create → Create**
 
-### 🔹 ARM Template Method
+### 🔹 ARM Template Method (Optional)
 
 Save the following as `aks-arm.json`:
 

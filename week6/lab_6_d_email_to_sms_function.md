@@ -2,13 +2,8 @@
 <img width="1382" height="913" alt="6-d" src="https://github.com/user-attachments/assets/a8a70d3a-eb5c-4764-afb1-643d4c6fed41" />
 
 ## 🎯 Objective
-Build an **event-driven serverless system** using **Azure Functions (Node.js)** that listens for new emails via a **Microsoft Graph webhook** and sends an **SMS alert** using **Twilio**.  
+Build an **event-driven serverless system** using **Azure Functions (Node.js)** that listens for new emails via a **Microsoft Graph webhook** and sends an **SMS alert** using **Azure Communication Services (ACS)**.  
 When a new email arrives, the function extracts the sender and subject, then delivers a text message notification.
-
----
-
-## ⏱ Estimated Duration
-**90 minutes**
 
 ---
 
@@ -17,56 +12,45 @@ When a new email arrives, the function extracts the sender and subject, then del
 - Office 365 Mailbox with Microsoft Graph API access  
 - Azure CLI and Node.js (v18+) installed  
 - Azure Functions Core Tools v4 installed  
-- Twilio Account with verified phone number  
+- Azure Communication Services (ACS) resource with SMS enabled  
 - [ngrok](https://ngrok.com/) installed (for local webhook testing)  
 - Admin permission to register an Azure AD App
-
+- Azure Functions Core Tools v4 installed
+  ```bash
+    # Check if Azure Functions Core Tools v4 is installed
+    func --version || echo "Azure Functions Core Tools not found. Installing..."
+    # Install Azure Functions Core Tools v4 (requires Node.js)
+    npm install -g azure-functions-core-tools@4 --unsafe-perm true
+    # Verify installation
+    func --version
+  ```
 ---
 
 ## 1️⃣ Create Azure Resources
-
 ```bash
+# Set location, resource group, storage, and function app variables
 LOCATION="australiaeast"
 RG="rg-lab6d-email-sms"
 STO="stemail$RANDOM"
 FUNC_APP="func-email-sms$RANDOM"
+```
 
+```bash
+# Create the resource group
 az group create --name $RG --location $LOCATION
+```
 
+```bash
+# Create the storage account
 az storage account create \
   --name $STO \
   --location $LOCATION \
   --resource-group $RG \
   --sku Standard_LRS
-
-az functionapp create \
-  --resource-group $RG \
-  --consumption-plan-location $LOCATION \
-  --name $FUNC_APP \
-  --storage-account $STO \
-  --runtime node \
-  --functions-version 4
-```
-## Variables
-```bash
-LOCATION="australiaeast"
-RG="rg-lab6d-email-sms"
-STO="stemail$RANDOM"
-FUNC_APP="func-email-sms$RANDOM"
 ```
 
-## 1️⃣ Create Azure Resources
 ```bash
-az group create \
-  --name $RG \
-  --location $LOCATION
-
-az storage account create \
-  --name $STO \
-  --location $LOCATION \
-  --resource-group $RG \
-  --sku Standard_LRS
-
+# Create the Azure Function App
 az functionapp create \
   --resource-group $RG \
   --consumption-plan-location $LOCATION \
@@ -81,12 +65,15 @@ az functionapp create \
 ## 2️⃣ Initialize Function Locally
 
 ```bash
+# Initialize the function project
 func init lab6d-email-func --javascript
+# Change to the project directory
 cd lab6d-email-func
+# Create a new HTTP trigger function
 func new --name EmailWebhook --template "HTTP trigger" --authlevel "anonymous"
 ```
 
-This creates:
+> This creates:
 ```
 lab6d-email-func/
  └── EmailWebhook/
@@ -98,11 +85,11 @@ lab6d-email-func/
 
 ## 3️⃣ Implement EmailWebhook Logic
 
-Replace `EmailWebhook/index.js` with the following code:
+> Replace `EmailWebhook/index.js` with the following code:
 
 ```javascript
-const twilio = require('twilio');
-const axios = require('axios');
+const { SmsClient } = require("@azure/communication-sms");
+const axios = require("axios");
 
 module.exports = async function (context, req) {
   const mode = req.query.validationToken ? "validate" : "notify";
@@ -113,7 +100,7 @@ module.exports = async function (context, req) {
     context.res = {
       status: 200,
       body: req.query.validationToken,
-      headers: { 'Content-Type': 'text/plain' }
+      headers: { "Content-Type": "text/plain" },
     };
     return;
   }
@@ -126,21 +113,22 @@ module.exports = async function (context, req) {
   }
 
   const accessToken = await getAccessToken();
-  const msgRes = await axios.get(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const msgRes = await axios.get(
+    `https://graph.microsoft.com/v1.0/me/messages/${messageId}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
 
   const sender = msgRes.data?.from?.emailAddress?.address || "Unknown";
   const subject = msgRes.data?.subject || "(No Subject)";
 
   try {
-    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH_TOKEN);
-    await client.messages.create({
-      body: `📧 New Email from ${sender}: ${subject}`,
-      from: process.env.TWILIO_PHONE,
-      to: process.env.RECIPIENT_PHONE
+    const smsClient = new SmsClient(process.env.ACS_CONNECTION_STRING);
+    await smsClient.send({
+      from: process.env.ACS_PHONE,
+      to: [process.env.RECIPIENT_PHONE],
+      message: `📧 New Email from ${sender}: ${subject}`,
     });
-    context.res = { status: 200, body: "SMS sent successfully." };
+    context.res = { status: 200, body: "SMS sent successfully via ACS." };
   } catch (err) {
     context.res = { status: 500, body: "SMS failed: " + err.message };
   }
@@ -148,8 +136,8 @@ module.exports = async function (context, req) {
 
 // Helper: Acquire Microsoft Graph Access Token
 async function getAccessToken() {
-  const qs = require('querystring');
-  const axios = require('axios');
+  const qs = require("querystring");
+  const axios = require("axios");
 
   const tokenRes = await axios.post(
     `https://login.microsoftonline.com/${process.env.TENANT_ID}/oauth2/v2.0/token`,
@@ -157,9 +145,9 @@ async function getAccessToken() {
       grant_type: "client_credentials",
       client_id: process.env.CLIENT_ID,
       client_secret: process.env.CLIENT_SECRET,
-      scope: "https://graph.microsoft.com/.default"
+      scope: "https://graph.microsoft.com/.default",
     }),
-    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
   );
 
   return tokenRes.data.access_token;
@@ -194,13 +182,8 @@ async function getAccessToken() {
 ## 5️⃣ Install Dependencies
 
 ```bash
-npm install twilio axios querystring
-```
-```bash
-npm install \
-  twilio \
-  axios \
-  querystring
+# Install required npm packages
+npm install @azure/communication-sms axios querystring
 ```
 
 ---
@@ -208,30 +191,17 @@ npm install \
 ## 6️⃣ Set Environment Variables
 
 ```bash
+# Set environment variables for ACS, Microsoft Graph, and recipient
 az functionapp config appsettings set \
   --name $FUNC_APP \
   --resource-group $RG \
   --settings \
-  TWILIO_SID=<your_twilio_sid> \
-  TWILIO_AUTH_TOKEN=<your_twilio_auth_token> \
-  TWILIO_PHONE=<your_twilio_phone> \
+  ACS_CONNECTION_STRING=<your_acs_connection_string> \
+  ACS_PHONE=<your_acs_phone_number> \
   RECIPIENT_PHONE=<destination_number> \
   CLIENT_ID=<app_client_id> \
   CLIENT_SECRET=<app_client_secret> \
   TENANT_ID=<your_tenant_id>
-```
-```bash
-az functionapp config appsettings set \
-  --name $FUNC_APP \
-  --resource-group $RG \
-  --settings \
-    TWILIO_SID=<your_twilio_sid> \
-    TWILIO_AUTH_TOKEN=<your_twilio_auth_token> \
-    TWILIO_PHONE=<your_twilio_phone> \
-    RECIPIENT_PHONE=<destination_number> \
-    CLIENT_ID=<app_client_id> \
-    CLIENT_SECRET=<app_client_secret> \
-    TENANT_ID=<your_tenant_id>
 ```
 
 ---
@@ -239,16 +209,18 @@ az functionapp config appsettings set \
 ## 7️⃣ Test Locally
 
 ```bash
+# Start the function app locally
 func start
 ```
 
-Expose it publicly using **ngrok**:
+> Expose it publicly using **ngrok**:
 
 ```bash
+# Expose local function app to the internet for webhook testing
 ngrok http 7071
 ```
 
-Copy the public URL — e.g. `https://abcd1234.ngrok.io/api/EmailWebhook`.
+> Copy the public URL — e.g. `https://abcd1234.ngrok.io/api/EmailWebhook`.
 
 ---
 
@@ -270,13 +242,15 @@ Copy the public URL — e.g. `https://abcd1234.ngrok.io/api/EmailWebhook`.
 
 ## 9️⃣ Create Microsoft Graph Webhook Subscription
 
-Replace placeholders and run:
+> Replace placeholders and run:
 
 ```bash
+# Get an access token for Microsoft Graph
 ACCESS_TOKEN=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
   -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>&scope=https://graph.microsoft.com/.default" \
   https://login.microsoftonline.com/<tenant_id>/oauth2/v2.0/token | jq -r '.access_token')
 
+# Register the webhook subscription for new emails
 curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
@@ -288,37 +262,19 @@ curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
     "clientState": "secretClientValue"
   }'
 ```
-```bash
-ACCESS_TOKEN=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>&scope=https://graph.microsoft.com/.default" \
-  https://login.microsoftonline.com/<tenant_id>/oauth2/v2.0/token | jq -r '.access_token')
 
-curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "changeType": "created",
-    "notificationUrl": "https://<ngrok_url>/api/EmailWebhook",
-    "resource": "me/mailFolders('Inbox')/messages",
-    "expirationDateTime": "'$(date -u -d "+4230 minutes" '+%Y-%m-%dT%H:%M:%SZ')'",
-    "clientState": "secretClientValue"
-  }'
-```
-
-This registers a webhook for new incoming emails.
+> This registers a webhook for new incoming emails.
 
 ---
 
 ## 🔟 Deploy to Azure
 
 ```bash
-func azure functionapp publish $FUNC_APP
-```
-```bash
+# Publish the function app to Azure
 func azure functionapp publish $FUNC_APP
 ```
 
-After testing successfully with **ngrok**, update the **notificationUrl** in Microsoft Graph to point to your **Azure Function URL**.
+> After testing successfully with **ngrok**, update the **notificationUrl** in Microsoft Graph to point to your **Azure Function URL**.
 
 ---
 
@@ -335,9 +291,7 @@ After testing successfully with **ngrok**, update the **notificationUrl** in Mic
 ## 🧹 Clean Up
 
 ```bash
-az group delete --name $RG --yes --no-wait
-```
-```bash
+# Delete the resource group and all resources
 az group delete \
   --name $RG \
   --yes \
@@ -353,15 +307,7 @@ az group delete \
 | Azure Function deployed successfully | ✅ |
 | Microsoft Graph subscription validated | ✅ |
 | Email triggers Function execution | ✅ |
-| SMS sent via Twilio with sender & subject | ✅ |
+| SMS sent via ACS with sender & subject | ✅ |
 | Resources deleted after cleanup | ✅ |
 
 ---
-
-## 🧩 Optional Enhancements
-
-- Replace Twilio with **Azure Communication Services (ACS)** for full Azure integration.  
-- Persist email metadata in **Cosmos DB** for analytics.  
-- Add retry policies for SMS delivery failures.  
-- Extend webhook logic to handle calendar events or Teams messages.
-
