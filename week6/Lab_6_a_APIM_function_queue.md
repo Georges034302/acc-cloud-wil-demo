@@ -215,7 +215,7 @@ az apim show \
 
 1. Go to the **Azure Portal** → open your **Function App**  (e.g., `func-httpq-<UNIQ>`)*
 2. In the **Functions**, Select your target function — for example: **`sendMessage`**
-3. At the top, click **➕ Get Function URL**.
+3. At the top **Code+Test**, click **Get function URL**.
 4. In the dialog that appears:
    - Choose **default (Function key)** from the dropdown.
    - Copy the generated URL — it will look like:
