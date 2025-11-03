@@ -69,9 +69,37 @@ az group create \
 
 ---
 
-## 3) Add an HTTP Trigger Function (Portal)
+## 3) Assign Managed Identity and Storage Queue Permissions
 
-1. Function App → **Functions → + Create**
+### Enable Managed Identity for Function App
+
+1. Go to your Function App (`func-httpq-gbg123`) in the Azure Portal.
+2. In the left menu, select **Identity**.
+3. Under **System assigned**, set **Status** to **On**.
+4. Click **Save**.
+
+---
+
+### Assign Storage Queue Data Contributor Role
+
+1. Go to your Storage Account (`stfuncgbg123`) in the Azure Portal.
+2. In the left menu, select **Access Control (IAM)**.
+3. Click **+ Add → Add role assignment**.
+4. Set **Role** to: `Storage Queue Data Contributor`
+5. Set **Assign access to**: `Managed identity`
+6. In **Select members**, search for and select your Function App (`func-httpq-gbg123`).
+7. Click **Save**.
+
+---
+
+This will allow your Function App to read/write messages to the queue using its managed identity.
+
+---
+
+## 4) Add an HTTP Trigger Function (Portal)
+
+1. Function App → Select `func-httpq-<UNIQ>` 
+2. Choose → **Create In Azure Portal**
 2. Template: **HTTP trigger**
 3. Function name: `sendMessage`
 4. Authorization level: **Function**
@@ -79,20 +107,20 @@ az group create \
 
 ---
 
-## 4) Add Queue Output Binding (Portal)
+## 5) Add Queue Output Binding (Portal)
 
-1. Function → **Integration → + Add output**
+1. Function (`func-httpq-<UNIQ>` ) Select → **Integration → + Add output**
 2. Binding type: **Azure Queue Storage**
 3. Storage account connection: `AzureWebJobsStorage`
-4. Queue name: `messages-out`
-5. Parameter name: `outputQueueItem`
-6. **Save**
+4. Parameter name: `outputQueueItem`
+5. Queue name: `messages-out`
+6. **Add**
 
 ---
 
-## 5) Edit Function Code (Portal)
+## 6) Edit Function Code (Portal)
 
-Open **Code + Test → `index.js`**, replace content with:
+1. Function (`func-httpq-<UNIQ>` ) Select → **Code + Test → `index.js`**, replace content with:
 
 ```javascript
 module.exports = async function (context, req) {
@@ -114,15 +142,26 @@ module.exports = async function (context, req) {
 };
 ```
 
-Click **Save**, then **Test/Run** with body:
-```json
-{ "message": "hello" }
-```
-Expect **200 OK**.
+2. Click **Save**, then **Test/Run**:
+  - In the request Input paste the JSON in the request body:
+  ```json
+    { 
+      "message": "hello" 
+    }
+  ```
+  - Expect Output:
+    - HTTP response code: **200 OK**
+    - HTTP response content
+  ```json
+    {
+      "result": "Message enqueued",
+      "value": "hello"
+    }
+  ```
 
 ---
 
-## 6) Verify Queue Message (Portal)
+## 7) Verify Queue Message (Portal)
 
 1. Storage accounts → `stfunc<UNIQ>`
 2. **Queues → messages-out**
@@ -130,7 +169,7 @@ Expect **200 OK**.
 
 ---
 
-## 7) Provision API Management (CLI)
+## 8) Provision API Management (CLI)
 
 ```bash
 az apim create \
@@ -153,7 +192,7 @@ az apim show \
 
 ---
 
-## 8) Import the Function into APIM (Portal)
+## 9) Import the Function into APIM (Portal)
 
 1. **API Management services → `apim-<UNIQ>`**
 2. **APIs → + Add API → Function App**
@@ -167,7 +206,7 @@ az apim show \
 
 ---
 
-## 9) Test via APIM (Portal) and Externally
+## 10) Test via APIM (Portal) and Externally
 
 ### Test in APIM (Portal)
 - APIM → **APIs → sendMessage → Test**
@@ -204,7 +243,7 @@ Verify new message appears in **Queues → messages-out**.
 
 ---
 
-## 10) Clean Up (CLI)
+## 11) Clean Up (CLI)
 
 ```bash
  az group delete \
