@@ -110,23 +110,7 @@ npm install @azure/data-tables csv-parse uuid
 
 ---
 
-## 7️⃣ Update `function.json`
-
-> For the Node.js v4 model, update the binding directly in `src/functions/ProcessStudentCSV.js`.
-> Example:
-```javascript
-app.storageBlob('ProcessStudentCSV', {
-    path: `${process.env.CONTAINER_NAME}/{name}`,
-    connection: 'AzureWebJobsStorage',
-    handler: (blob, context) => {
-        // ...function code...
-    }
-});
-```
-
----
-
-## 8️⃣ Edit `ProcessStudentCSV.js`
+## 7️⃣ Edit `ProcessStudentCSV.js`
 
 Replace existing code with:
 
@@ -176,7 +160,7 @@ app.storageBlob('ProcessStudentCSV', {
 
 ---
 
-## 9️⃣ Deploy to Azure
+## 8️⃣ Deploy to Azure
 
 ```bash
 # Create the Azure Function App
@@ -204,7 +188,7 @@ func azure functionapp publish $FUNC_APP
 
 ---
 
-## 🔟 Test the Function
+## 9️⃣ Test the Function
 
 Upload a CSV to trigger it:
 
