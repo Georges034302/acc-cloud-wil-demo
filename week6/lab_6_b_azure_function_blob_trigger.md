@@ -7,11 +7,6 @@ When a CSV file is uploaded to a designated container, the function automaticall
 
 ---
 
-## Estimated Duration
-**60 minutes**
-
----
-
 ## Prerequisites
 - Active Azure Subscription  
 - Azure CLI and Azure Functions Core Tools v4 installed  
@@ -28,6 +23,28 @@ RG="rg-student-func"
 STO="ststudent$RANDOM"
 
 az group create --name $RG --location $LOCATION
+
+az storage account create \
+  --name $STO \
+  --resource-group $RG \
+  --location $LOCATION \
+  --sku Standard_LRS
+```
+
+## Variables
+```bash
+LOCATION="australiaeast"
+RG="rg-student-func"
+STO="ststudent$RANDOM"
+FUNC_APP="func-student-$RANDOM"
+```
+
+## 1️⃣ Create Resource Group and Storage Account
+
+```bash
+az group create \
+  --name $RG \
+  --location $LOCATION
 
 az storage account create \
   --name $STO \
@@ -204,6 +221,17 @@ az functionapp create \
 
 func azure functionapp publish $FUNC_APP
 ```
+```bash
+az functionapp create \
+  --resource-group $RG \
+  --consumption-plan-location $LOCATION \
+  --name $FUNC_APP \
+  --storage-account $STO \
+  --runtime node \
+  --functions-version 4
+
+func azure functionapp publish $FUNC_APP
+```
 
 ---
 
@@ -211,6 +239,13 @@ func azure functionapp publish $FUNC_APP
 
 Upload a CSV to trigger it:
 
+```bash
+az storage blob upload \
+  --account-name $STO \
+  --container-name student-files \
+  --file students.csv \
+  --name students.csv
+```
 ```bash
 az storage blob upload \
   --account-name $STO \
@@ -235,6 +270,12 @@ Verify inserts in **Table Storage → StudentGrades**.
 
 ```bash
 az group delete --name $RG --yes --no-wait
+```
+```bash
+az group delete \
+  --name $RG \
+  --yes \
+  --no-wait
 ```
 
 ---

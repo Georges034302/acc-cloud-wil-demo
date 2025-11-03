@@ -31,6 +31,27 @@ STO="stfunc$UNIQ"
 FUNCAPP="func-httpq-$UNIQ"
 APIM="apim-$UNIQ"
 
+
+## Variables
+```bash
+# >>> EDIT THESE VALUES <<<
+UNIQ="gbg123"                 # globally unique suffix (letters/numbers)
+EMAIL="you@example.com"
+
+# Fixed values for the lab
+LOCATION="australiaeast"
+RG="rg-func-apim-$UNIQ"
+STO="stfunc$UNIQ"
+FUNCAPP="func-httpq-$UNIQ"
+APIM="apim-$UNIQ"
+```
+
+## 1) Create Resource Group (CLI)
+```bash
+az group create \
+  --name "$RG" \
+  --location "$LOCATION"
+```
 # Create resource group
 az group create --name "$RG" --location "$LOCATION"
 ```
@@ -133,7 +154,11 @@ az apim create \
 
 Check status until **Succeeded**:
 ```bash
-az apim show -g "$RG" -n "$APIM" --query "provisioningState" -o tsv
+az apim show \
+  --resource-group "$RG" \
+  --name "$APIM" \
+  --query "provisioningState" \
+  -o tsv
 ```
 
 ---
@@ -172,12 +197,12 @@ az apim show -g "$RG" -n "$APIM" --query "provisioningState" -o tsv
 
 Run:
 ```bash
-FUNC_KEY="<FUNCTION_KEY>"
-APIM_URL="https://apim-$UNIQ.azure-api.net/sendMessage?code=$FUNC_KEY"
+ FUNC_KEY="<FUNCTION_KEY>"
+ APIM_URL="https://apim-$UNIQ.azure-api.net/sendMessage?code=$FUNC_KEY"
 
-curl -i -X POST "$APIM_URL" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Triggered via APIM"}'
+ curl -i -X POST "$APIM_URL" \
+   -H "Content-Type: application/json" \
+   -d '{"message": "Triggered via APIM"}'
 ```
 
 Expected response:
@@ -192,7 +217,10 @@ Verify new message appears in **Queues → messages-out**.
 ## 10) Clean Up (CLI)
 
 ```bash
-az group delete --name "$RG" --yes --no-wait
+ az group delete \
+   --name "$RG" \
+   --yes \
+   --no-wait
 ```
 
 ---

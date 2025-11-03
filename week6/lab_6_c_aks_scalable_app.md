@@ -7,23 +7,16 @@ Provision an **Azure Kubernetes Service (AKS)** cluster, deploy a sample contain
 
 ---
 
-## ⏱ Estimated Duration
-**60–75 minutes**
-
----
-
-## 🧭 Prerequisites
-- Azure subscription with Owner or Contributor role  
-- Azure CLI installed and logged in (`az login`)  
-- Docker and `kubectl` installed  
-- Optional: Visual Studio Code with Kubernetes extension
-
----
-
 ## 1️⃣ Create Resource Group and AKS Cluster
 
 ### 🔹 CLI Method
 
+## Variables
+```bash
+LOCATION="australiaeast"
+RG="aks-lab-rg"
+AKSNAME="aks-demo-cluster"
+```
 ```bash
 LOCATION="australiaeast"
 RG="aks-lab-rg"
@@ -86,7 +79,6 @@ Deploy using CLI:
 
 ```bash
 az deployment group create \
-  --resource-group $RG \
   --template-file aks-arm.json
 ```
 
@@ -102,7 +94,6 @@ az aks get-credentials \
 
 Verify connection:
 
-```bash
 kubectl get nodes
 ```
 
@@ -124,7 +115,6 @@ kubectl get svc webdemo
 ```
 
 Once the `EXTERNAL-IP` is assigned, open it in a web browser to confirm the Nginx welcome page.
-
 ---
 
 ## 4️⃣ Scale the Application
@@ -166,7 +156,6 @@ View autoscaler status:
 kubectl get hpa
 ```
 
----
 
 ## 5️⃣ Monitor the Cluster (Portal)
 
@@ -176,7 +165,6 @@ kubectl get hpa
    - Pod count and scaling activity
    - LoadBalancer and request throughput
 
----
 
 ## 6️⃣ Clean Up Resources
 
@@ -187,7 +175,6 @@ az group delete --name $RG --yes --no-wait
 ---
 
 ## ✅ Success Criteria
-
 | Verification Step | Expected Result |
 |--------------------|------------------|
 | Resource group and AKS cluster created | ✅ |
@@ -199,9 +186,9 @@ az group delete --name $RG --yes --no-wait
 ---
 
 ## 🧩 Optional Enhancements
-
 - Replace Nginx with a custom container from **Azure Container Registry (ACR)**.  
 - Integrate Azure Monitor to view scaling behavior.  
 - Automate AKS deployment via **Bicep** instead of ARM.  
-- Implement PodDisruptionBudget for better resilience during scale events.
 
+
+---

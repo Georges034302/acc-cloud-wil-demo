@@ -47,6 +47,34 @@ az functionapp create \
   --runtime node \
   --functions-version 4
 ```
+## Variables
+```bash
+LOCATION="australiaeast"
+RG="rg-lab6d-email-sms"
+STO="stemail$RANDOM"
+FUNC_APP="func-email-sms$RANDOM"
+```
+
+## 1️⃣ Create Azure Resources
+```bash
+az group create \
+  --name $RG \
+  --location $LOCATION
+
+az storage account create \
+  --name $STO \
+  --location $LOCATION \
+  --resource-group $RG \
+  --sku Standard_LRS
+
+az functionapp create \
+  --resource-group $RG \
+  --consumption-plan-location $LOCATION \
+  --name $FUNC_APP \
+  --storage-account $STO \
+  --runtime node \
+  --functions-version 4
+```
 
 ---
 
@@ -168,6 +196,12 @@ async function getAccessToken() {
 ```bash
 npm install twilio axios querystring
 ```
+```bash
+npm install \
+  twilio \
+  axios \
+  querystring
+```
 
 ---
 
@@ -185,6 +219,19 @@ az functionapp config appsettings set \
   CLIENT_ID=<app_client_id> \
   CLIENT_SECRET=<app_client_secret> \
   TENANT_ID=<your_tenant_id>
+```
+```bash
+az functionapp config appsettings set \
+  --name $FUNC_APP \
+  --resource-group $RG \
+  --settings \
+    TWILIO_SID=<your_twilio_sid> \
+    TWILIO_AUTH_TOKEN=<your_twilio_auth_token> \
+    TWILIO_PHONE=<your_twilio_phone> \
+    RECIPIENT_PHONE=<destination_number> \
+    CLIENT_ID=<app_client_id> \
+    CLIENT_SECRET=<app_client_secret> \
+    TENANT_ID=<your_tenant_id>
 ```
 
 ---
@@ -241,6 +288,22 @@ curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
     "clientState": "secretClientValue"
   }'
 ```
+```bash
+ACCESS_TOKEN=$(curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials&client_id=<client_id>&client_secret=<client_secret>&scope=https://graph.microsoft.com/.default" \
+  https://login.microsoftonline.com/<tenant_id>/oauth2/v2.0/token | jq -r '.access_token')
+
+curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "changeType": "created",
+    "notificationUrl": "https://<ngrok_url>/api/EmailWebhook",
+    "resource": "me/mailFolders('Inbox')/messages",
+    "expirationDateTime": "'$(date -u -d "+4230 minutes" '+%Y-%m-%dT%H:%M:%SZ')'",
+    "clientState": "secretClientValue"
+  }'
+```
 
 This registers a webhook for new incoming emails.
 
@@ -248,6 +311,9 @@ This registers a webhook for new incoming emails.
 
 ## 🔟 Deploy to Azure
 
+```bash
+func azure functionapp publish $FUNC_APP
+```
 ```bash
 func azure functionapp publish $FUNC_APP
 ```
@@ -270,6 +336,12 @@ After testing successfully with **ngrok**, update the **notificationUrl** in Mic
 
 ```bash
 az group delete --name $RG --yes --no-wait
+```
+```bash
+az group delete \
+  --name $RG \
+  --yes \
+  --no-wait
 ```
 
 ---
