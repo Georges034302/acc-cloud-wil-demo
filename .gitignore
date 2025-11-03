@@ -2,3 +2,12 @@
 env.local
 .env.*.local
 # Ignore environment variable files
+
+.vscode/
+vscode
+# Ignore Visual Studio Code settings folder
+node_modules/
+# Ignore Node.js dependencies
+
+
+

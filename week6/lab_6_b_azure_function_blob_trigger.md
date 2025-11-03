@@ -9,7 +9,15 @@ When a CSV file is uploaded to a designated container, the function automaticall
 
 ## Prerequisites
 - Active Azure Subscription  
-- Azure CLI and Azure Functions Core Tools v4 installed  
+- Azure CLI and Azure Functions Core Tools v4 installed
+  ```bash
+    # Check if Azure Functions Core Tools v4 is installed
+    func --version || echo "Azure Functions Core Tools not found. Installing..."
+    # Install Azure Functions Core Tools v4 (requires Node.js)
+    npm install -g azure-functions-core-tools@4 --unsafe-perm true
+    # Verify installation
+    func --version
+  ```
 - Node.js (v18 or later) installed  
 - Azure Storage Explorer (optional, for verification)
 
@@ -56,22 +64,29 @@ az storage container create \
 ```
 
 ```bash
+# Get the storage account KEY
+STO_KEY=$(az storage account keys list \
+  --resource-group $RG \
+  --account-name $STO \
+  --query "[0].value" \
+  -o tsv)
+```
+
+```bash
 # Create the Target Table
 az storage table create \
   --name $TABLE_NAME \
   --account-name $STO \
-  --resource-group $RG # Create the target table
+  --account-key $STO_KEY # Create the target table
 ```
 
 ---
 
 ## 4️⃣ Initialize Function App Project (Node.js)
-
 ```bash
-# Initialize the function app project
-func init student-app --worker-runtime node --language javascript
-# Change directory to the project folder
-cd student-app
+# Initialize the function app project (Node.js v4 model)
+func init . --worker-runtime node --language javascript
+# All files will be created in the current directory, with functions in src/functions/
 ```
 
 ---
@@ -81,14 +96,7 @@ cd student-app
 ```bash
 # Create a new blob trigger function
 func new --name ProcessStudentCSV --template "Azure Blob Storage trigger"
-```
-
-This creates:
-```
-student-app/
- └── ProcessStudentCSV/
-     ├── function.json
-     └── index.js
+# This creates src/functions/ProcessStudentCSV.js
 ```
 
 ---
@@ -96,7 +104,7 @@ student-app/
 ## 6️⃣ Add Required NPM Packages
 
 ```bash
-# Install required npm packages
+# Install required npm packages in the project root
 npm install @azure/data-tables csv-parse uuid
 ```
 
@@ -104,62 +112,66 @@ npm install @azure/data-tables csv-parse uuid
 
 ## 7️⃣ Update `function.json`
 
-> Edit to define trigger and Table Storage output:
-
-```json
-{
-  "bindings": [
-    {
-      "name": "myBlob",
-      "type": "blobTrigger",
-      "direction": "in",
-  "path": "${CONTAINER_NAME}/{name}",
-      "connection": "AzureWebJobsStorage"
+> For the Node.js v4 model, update the binding directly in `src/functions/ProcessStudentCSV.js`.
+> Example:
+```javascript
+app.storageBlob('ProcessStudentCSV', {
+    path: `${process.env.CONTAINER_NAME}/{name}`,
+    connection: 'AzureWebJobsStorage',
+    handler: (blob, context) => {
+        // ...function code...
     }
-  ],
-  "scriptFile": "index.js"
-}
+});
 ```
 
 ---
 
-## 8️⃣ Edit `index.js`
+## 8️⃣ Edit `ProcessStudentCSV.js`
 
 Replace existing code with:
 
 ```javascript
-const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
-const parse = require("csv-parse/sync").parse;
-const { v4: uuidv4 } = require("uuid");
+const { app } = require('@azure/functions');
 
-module.exports = async function (context, myBlob) {
-  context.log("Processing CSV upload...");
+app.storageBlob('ProcessStudentCSV', {
+    // Use environment variable for container name
+    path: `${process.env.CONTAINER_NAME || 'student-files'}/{name}`,
+    // Use default AzureWebJobsStorage connection
+    connection: 'AzureWebJobsStorage',
+    handler: async (blob, context) => {
+        context.log("Processing CSV upload...");
 
-  const csvContent = myBlob.toString("utf8");
-  const records = parse(csvContent, { columns: true, skip_empty_lines: true });
+        const csvContent = blob.toString("utf8");
+        const parse = require("csv-parse/sync").parse;
+        const { TableClient, AzureNamedKeyCredential } = require("@azure/data-tables");
+        const { v4: uuidv4 } = require("uuid");
 
-  const account = process.env.STORAGE_ACCOUNT_NAME;
-  const accountKey = process.env.STORAGE_ACCOUNT_KEY;
-  const tableName = process.env.TABLE_NAME || "StudentGrades";
+        const records = parse(csvContent, { columns: true, skip_empty_lines: true });
 
-  const credential = new AzureNamedKeyCredential(account, accountKey);
-  const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
+        const account = process.env.STORAGE_ACCOUNT_NAME;
+        const accountKey = process.env.STORAGE_ACCOUNT_KEY;
+        const tableName = process.env.TABLE_NAME || "StudentGrades";
 
-  await client.createTable();
+        const credential = new AzureNamedKeyCredential(account, accountKey);
+        const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
 
-  for (const record of records) {
-    const entity = {
-      partitionKey: "Grades",
-      rowKey: uuidv4(),
-      Name: record.Name,
-      Subject: record.Subject,
-      Grade: record.Grade
-    };
-    await client.createEntity(entity);
-  }
+        await client.createTable();
 
-  context.log(`✅ Inserted ${records.length} records.`);
-};
+        for (const record of records) {
+            const entity = {
+                partitionKey: "Grades",
+                rowKey: uuidv4(),
+                Name: record.Name,
+                Subject: record.Subject,
+                Grade: record.Grade
+            };
+            await client.createEntity(entity);
+        }
+
+        context.log(`✅ Inserted ${records.length} records.`);
+    }
+});
+
 ```
 
 ---
@@ -175,7 +187,17 @@ az functionapp create \
   --storage-account $STO \
   --runtime node \
   --functions-version 4
+```
 
+### Set Function App Settings
+```bash
+# Set required app settings for Table Storage access
+az functionapp config appsettings set --name $FUNC_APP --resource-group $RG --settings STORAGE_ACCOUNT_NAME=$STO STORAGE_ACCOUNT_KEY=$STO_KEY TABLE_NAME=$TABLE_NAME
+# List all app settings to verify
+az functionapp config appsettings list --name $FUNC_APP --resource-group $RG
+```
+
+```bash
 # Publish the function app to Azure
 func azure functionapp publish $FUNC_APP
 ```
@@ -191,8 +213,9 @@ Upload a CSV to trigger it:
 az storage blob upload \
   --account-name $STO \
   --container-name $CONTAINER_NAME \
-  --file students.csv \
-  --name students.csv
+  --file ../week6/students.csv \
+  --name students.csv \
+  --account-key $STO_KEY
 ```
 
 > Verify inserts in **Table Storage → StudentGrades**.
