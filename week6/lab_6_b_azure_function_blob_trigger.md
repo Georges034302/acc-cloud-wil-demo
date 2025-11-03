@@ -15,37 +15,28 @@ When a CSV file is uploaded to a designated container, the function automaticall
 
 ---
 
-## 1️⃣ Create Resource Group and Storage Account
+## 1️⃣ Set Enviroment Variables 
 
 ```bash
 LOCATION="australiaeast"
 RG="rg-student-func"
-STO="ststudent$RANDOM"
-
-az group create --name $RG --location $LOCATION
-
-az storage account create \
-  --name $STO \
-  --resource-group $RG \
-  --location $LOCATION \
-  --sku Standard_LRS
+STO="stdemo$RANDOM"
+FUNC_APP="func-student-app-$RANDOM"
+TABLE_NAME="StudentGrades"
+CONTAINER_NAME="student-files"
 ```
 
-## Variables
-```bash
-LOCATION="australiaeast"
-RG="rg-student-func"
-STO="ststudent$RANDOM"
-FUNC_APP="func-student-$RANDOM"
-```
-
-## 1️⃣ Create Resource Group and Storage Account
+## 2️⃣ Create Resource Group and Storage Account
 
 ```bash
+# Create the resource group
 az group create \
   --name $RG \
   --location $LOCATION
+```
 
+```bash
+# Create the storage account
 az storage account create \
   --name $STO \
   --resource-group $RG \
@@ -55,18 +46,40 @@ az storage account create \
 
 ---
 
-## 2️⃣ Initialize Function App Project (Node.js)
+## 3️⃣ Create Blob Container and Target Table
 
 ```bash
+# Create Blob Container
+az storage container create \
+  --name $CONTAINER_NAME \
+  --account-name $STO # Create the blob container
+```
+
+```bash
+# Create the Target Table
+az storage table create \
+  --name $TABLE_NAME \
+  --account-name $STO \
+  --resource-group $RG # Create the target table
+```
+
+---
+
+## 4️⃣ Initialize Function App Project (Node.js)
+
+```bash
+# Initialize the function app project
 func init student-app --worker-runtime node --language javascript
+# Change directory to the project folder
 cd student-app
 ```
 
 ---
 
-## 3️⃣ Create a Blob Trigger Function
+## 5️⃣ Create a Blob Trigger Function
 
 ```bash
+# Create a new blob trigger function
 func new --name ProcessStudentCSV --template "Azure Blob Storage trigger"
 ```
 
@@ -80,17 +93,18 @@ student-app/
 
 ---
 
-## 4️⃣ Add Required NPM Packages
+## 6️⃣ Add Required NPM Packages
 
 ```bash
+# Install required npm packages
 npm install @azure/data-tables csv-parse uuid
 ```
 
 ---
 
-## 5️⃣ Update `function.json`
+## 7️⃣ Update `function.json`
 
-Edit to define trigger and Table Storage output:
+> Edit to define trigger and Table Storage output:
 
 ```json
 {
@@ -99,7 +113,7 @@ Edit to define trigger and Table Storage output:
       "name": "myBlob",
       "type": "blobTrigger",
       "direction": "in",
-      "path": "student-files/{name}",
+  "path": "${CONTAINER_NAME}/{name}",
       "connection": "AzureWebJobsStorage"
     }
   ],
@@ -109,7 +123,7 @@ Edit to define trigger and Table Storage output:
 
 ---
 
-## 6️⃣ Edit `index.js`
+## 8️⃣ Edit `index.js`
 
 Replace existing code with:
 
@@ -126,7 +140,7 @@ module.exports = async function (context, myBlob) {
 
   const account = process.env.STORAGE_ACCOUNT_NAME;
   const accountKey = process.env.STORAGE_ACCOUNT_KEY;
-  const tableName = "StudentGrades";
+  const tableName = process.env.TABLE_NAME || "StudentGrades";
 
   const credential = new AzureNamedKeyCredential(account, accountKey);
   const client = new TableClient(`https://${account}.table.core.windows.net`, tableName, credential);
@@ -150,67 +164,10 @@ module.exports = async function (context, myBlob) {
 
 ---
 
-## 7️⃣ Create the Target Table
+## 9️⃣ Deploy to Azure
 
 ```bash
-az storage table create \
-  --name StudentGrades \
-  --account-name $STO \
-  --resource-group $RG
-```
-
----
-
-## 8️⃣ Create Blob Container
-
-```bash
-az storage container create \
-  --name student-files \
-  --account-name $STO
-```
-
----
-
-## 9️⃣ Configure Local Settings
-
-Edit **`local.settings.json`**:
-
-```json
-{
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=<storage-name>;AccountKey=<key>;EndpointSuffix=core.windows.net",
-    "FUNCTIONS_WORKER_RUNTIME": "node",
-    "STORAGE_ACCOUNT_NAME": "<storage-name>",
-    "STORAGE_ACCOUNT_KEY": "<key>"
-  }
-}
-```
-
-Retrieve keys:
-
-```bash
-az storage account keys list --resource-group $RG --account-name $STO -o table
-```
-
----
-
-## 🔟 Run Locally
-
-```bash
-func start
-```
-
-Upload `students.csv` into the `student-files` container.  
-The function will parse and insert data into the `StudentGrades` table.
-
----
-
-## 1️⃣1️⃣ Deploy to Azure
-
-```bash
-FUNC_APP="func-student-$RANDOM"
-
+# Create the Azure Function App
 az functionapp create \
   --resource-group $RG \
   --consumption-plan-location $LOCATION \
@@ -219,44 +176,26 @@ az functionapp create \
   --runtime node \
   --functions-version 4
 
-func azure functionapp publish $FUNC_APP
-```
-```bash
-az functionapp create \
-  --resource-group $RG \
-  --consumption-plan-location $LOCATION \
-  --name $FUNC_APP \
-  --storage-account $STO \
-  --runtime node \
-  --functions-version 4
-
+# Publish the function app to Azure
 func azure functionapp publish $FUNC_APP
 ```
 
 ---
 
-## 1️⃣2️⃣ Test the Function
+## 🔟 Test the Function
 
 Upload a CSV to trigger it:
 
 ```bash
+# Upload a CSV file to trigger the function
 az storage blob upload \
   --account-name $STO \
-  --container-name student-files \
-  --file students.csv \
-  --name students.csv
-```
-```bash
-az storage blob upload \
-  --account-name $STO \
-  --container-name student-files \
+  --container-name $CONTAINER_NAME \
   --file students.csv \
   --name students.csv
 ```
 
-Verify inserts in **Table Storage → StudentGrades**.
-
----
+> Verify inserts in **Table Storage → StudentGrades**.
 
 ## ✅ Expected Result
 
@@ -269,9 +208,7 @@ Verify inserts in **Table Storage → StudentGrades**.
 ## 🧹 Clean Up
 
 ```bash
-az group delete --name $RG --yes --no-wait
-```
-```bash
+# Delete the resource group and all resources
 az group delete \
   --name $RG \
   --yes \
