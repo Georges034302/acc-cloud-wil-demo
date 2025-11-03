@@ -5,8 +5,6 @@
 ## Objective
 Create a **Node.js HTTP-triggered Azure Function** that writes messages into **Azure Storage Queue**, then expose it through **Azure API Management (APIM)** **without** a subscription key. Region is fixed to **`australiaeast`**. All resources are created from scratch in an isolated resource group.
 
-## Estimated Duration
-**60–75 minutes** (APIM Developer SKU provisioning typically takes ~30–45 minutes).
 
 ## Prerequisites
 - Active Azure subscription (Contributor or higher)
@@ -31,29 +29,14 @@ STO="stfunc$UNIQ"
 FUNCAPP="func-httpq-$UNIQ"
 APIM="apim-$UNIQ"
 
-
-## Variables
-```bash
-# >>> EDIT THESE VALUES <<<
-UNIQ="gbg123"                 # globally unique suffix (letters/numbers)
-EMAIL="you@example.com"
-
-# Fixed values for the lab
-LOCATION="australiaeast"
-RG="rg-func-apim-$UNIQ"
-STO="stfunc$UNIQ"
-FUNCAPP="func-httpq-$UNIQ"
-APIM="apim-$UNIQ"
 ```
 
-## 1) Create Resource Group (CLI)
 ```bash
+# Create Resource Group (CLI)
 az group create \
   --name "$RG" \
   --location "$LOCATION"
 
-# Create resource group
-az group create --name "$RG" --location "$LOCATION"
 ```
 
 ---
