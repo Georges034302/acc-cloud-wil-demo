@@ -51,7 +51,7 @@ APIM="apim-$UNIQ"
 az group create \
   --name "$RG" \
   --location "$LOCATION"
-```
+
 # Create resource group
 az group create --name "$RG" --location "$LOCATION"
 ```
