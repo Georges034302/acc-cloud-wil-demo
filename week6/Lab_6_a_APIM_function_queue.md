@@ -90,6 +90,16 @@ az group create \
 6. In **Select members**, search for and select your Function App (`func-httpq-gbg123`).
 7. Click **Save**.
 
+### Assign Role to Your User Account
+
+1. Go to your Storage Account (`stfuncgbg123`) in the Azure Portal.
+2. In the left menu, select **Access Control (IAM)**.
+3. Click **+ Add → Add role assignment**.
+4. Set **Role** to: `Storage Queue Data Contributor`
+5. Set **Assign access to**: `User, group, or service principal`
+6. In **Select members**, search for and select your user account (`georges.boughantous@gmail.com`).
+7. Click **Save**.
+
 ---
 
 This will allow your Function App to read/write messages to the queue using its managed identity.
