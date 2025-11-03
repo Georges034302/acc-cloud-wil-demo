@@ -102,10 +102,6 @@ az group create \
 
 ---
 
-This will allow your Function App to read/write messages to the queue using its managed identity.
-
----
-
 ## 4) Add an HTTP Trigger Function (Portal)
 
 1. Function App → Select `func-httpq-<UNIQ>` 
