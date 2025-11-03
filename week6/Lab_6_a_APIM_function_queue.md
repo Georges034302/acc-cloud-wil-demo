@@ -19,7 +19,7 @@ Create a **Node.js HTTP-triggered Azure Function** that writes messages into **A
 
 ```bash
 # >>> EDIT THESE VALUES <<<
-UNIQ="gbg123"                 # globally unique suffix (letters/numbers)
+UNIQ="gbg$RANDOM"                 # globally unique suffix (letters/numbers)
 EMAIL="you@example.com"
 
 # Fixed values for the lab
@@ -28,6 +28,7 @@ RG="rg-func-apim-$UNIQ"
 STO="stfunc$UNIQ"
 FUNCAPP="func-httpq-$UNIQ"
 APIM="apim-$UNIQ"
+APIM_SKU="Consumption"
 
 ```
 
@@ -71,16 +72,14 @@ az group create \
 
 ## 3) Assign Managed Identity and Storage Queue Permissions
 
-### Enable Managed Identity for Function App
+### 🔹 Enable Managed Identity for Function App
 
 1. Go to your Function App (`func-httpq-gbg123`) in the Azure Portal.
 2. In the left menu, select **Identity**.
 3. Under **System assigned**, set **Status** to **On**.
 4. Click **Save**.
 
----
-
-### Assign Storage Queue Data Contributor Role
+### 🔹 Assign Storage Queue Data Contributor Role
 
 1. Go to your Storage Account (`stfuncgbg123`) in the Azure Portal.
 2. In the left menu, select **Access Control (IAM)**.
@@ -90,7 +89,7 @@ az group create \
 6. In **Select members**, search for and select your Function App (`func-httpq-gbg123`).
 7. Click **Save**.
 
-### Assign Role to Your User Account
+### 🔹 Assign Role to Your User Account
 
 1. Go to your Storage Account (`stfuncgbg123`) in the Azure Portal.
 2. In the left menu, select **Access Control (IAM)**.
@@ -183,11 +182,10 @@ az apim create \
   --resource-group "$RG" \
   --publisher-email "$EMAIL" \
   --publisher-name "Lab6A-Publisher" \
-  --location "$LOCATION" \
-  --sku-name "Developer"
+  --sku-name "$APIM_SKU"
 ```
 
-Check status until **Succeeded**:
+> Check status until **Succeeded**:
 ```bash
 az apim show \
   --resource-group "$RG" \
@@ -198,64 +196,83 @@ az apim show \
 
 ---
 
-## 9) Import the Function into APIM (Portal)
+## 9) Import the Function into APIM (Portal) — Consumption SKU
 
-1. **API Management services → `apim-<UNIQ>`**
-2. **APIs → + Add API → Function App**
-3. Select Function App `func-httpq-<UNIQ>`
-4. Select function `sendMessage` → **Create**
-5. Open **Settings** for the imported API:
-   - Disable **Subscription required** (toggle **off**)
-   - **Save**
+### 🔹 Manual HTTP API Creation and Operation Setup (Portal)
 
-> The endpoint is now public through APIM. The backend Function still requires its **function key**.
+1. Go to **API Management services → `apim-<UNIQ>`**.
+2. Click **Add API**.
+3. Choose **HTTP** (Manually define an HTTP API).
+4. Fill in the details:
+   - **Display name**: `sendMessage`
+   - **Name**: `sendMessage`
+   - **Web service URL**: Paste your Function App URL, including the function key
+   - **API URL suffix**: `sendMessage`
+   - **Protocols**: `HTTPS`
+5. Click **Create**.
+
+### 🔹 How to Get the Azure Function URL (with Function Key) to use as **Web service URL**
+
+1. Go to the **Azure Portal** → open your **Function App**  (e.g., `func-httpq-<UNIQ>`)*
+2. In the **Functions**, Select your target function — for example: **`sendMessage`**
+3. At the top, click **➕ Get Function URL**.
+4. In the dialog that appears:
+   - Choose **default (Function key)** from the dropdown.
+   - Copy the generated URL — it will look like:
+     ```bash
+      https://func-http-node-app-<unique>.azurewebsites.net/api/sendMessage?code=<FUNCTION_KEY>
+     ```
+5. Use this URL (including the `?code=` part) as the **backend URL** in APIM or any client app.
+
+### 🔹 Add POST Operation (Correct Path)
+
+After the API is created:
+1. Go to your new API (**sendMessage**) in APIM.
+2. Click **Add operation**.
+3. Set the following:
+   - **Display name**: `POST sendMessage`
+   - **Name**: `post-sendMessage`
+   - **URL template**: `/` (not `/sendMessage`)
+   - **Method**: `POST`
+   - **Request body**: Add a parameter for the message (e.g., JSON body with `message` property)
+4. Click **Save**.
+
+### 🔹 Disable Subscription Requirement
+
+After creating the API:
+- Go to the API settings.
+- **Subscription required**: Toggle **off** (if available).
+- **Save**.
+
+> The endpoint is now public through APIM. The backend Function requires its **function key** in the backend URL.
 
 ---
 
-## 10) Test via APIM (Portal) and Externally
+## 10) Test via APIM (Portal)
 
-### Test in APIM (Portal)
-- APIM → **APIs → sendMessage → Test**
+- Go to **APIs → sendMessage → Test** in APIM.
 - Method: **POST**
 - Body:
   ```json
   { "message": "Hello from APIM" }
   ```
-- Click **Send** → Expect **200 OK**.
+- Click **Send**.
+- Expect **200 OK** and a response like:
+  ```json
+  { "result": "Message enqueued", "value": "Hello from APIM" }
+  ```
 
-### External Test (cURL)
-1. Copy the **Invoke URL** from APIM (Frontend), e.g.:
-   ```
-   https://apim-<UNIQ>.azure-api.net/sendMessage
-   ```
-2. Get the **Function key** from Function → **Code + Test → Get Function URL** (copy `code=<FUNCTION_KEY>`).
-
-Run:
-```bash
- FUNC_KEY="<FUNCTION_KEY>"
- APIM_URL="https://apim-$UNIQ.azure-api.net/sendMessage?code=$FUNC_KEY"
-
- curl -i -X POST "$APIM_URL" \
-   -H "Content-Type: application/json" \
-   -d '{"message": "Triggered via APIM"}'
-```
-
-Expected response:
-```json
-{ "result": "Message enqueued", "value": "Triggered via APIM" }
-```
-
-Verify new message appears in **Queues → messages-out**.
+> Verify new message appears in **Queues → messages-out** in your Storage Account.
 
 ---
 
 ## 11) Clean Up (CLI)
 
 ```bash
- az group delete \
-   --name "$RG" \
-   --yes \
-   --no-wait
+az group delete \
+  --name "$RG" \
+  --yes \
+  --no-wait
 ```
 
 ---
