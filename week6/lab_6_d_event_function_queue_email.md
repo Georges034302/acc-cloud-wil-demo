@@ -17,6 +17,15 @@ In this lab, you will:
 - ✅ Active **Azure Subscription**
 - ✅ **Azure CLI** installed (v2.57+ recommended)
 - ✅ **Node.js 18+** and **Azure Functions Core Tools v4** installed
+- Azure CLI and Azure Functions Core Tools v4 installed
+  ```bash
+    # Check if Azure Functions Core Tools v4 is installed
+    func --version || echo "Azure Functions Core Tools not found. Installing..."
+    # Install Azure Functions Core Tools v4 (requires Node.js)
+    npm install -g azure-functions-core-tools@4 --unsafe-perm true
+    # Verify installation
+    func --version
+  ```
 - ✅ Permission to create Azure resources (Resource Group, Storage, Function App, ACS)
 - ✅ Valid **email address** to receive alerts
 
@@ -41,16 +50,31 @@ ACS_NAME="acs-lab6d-notify"
 # ===========================
 
 # Create resource group
-az group create --name $RG --location $LOCATION
+az group create \
+  --name $RG \
+  --location $LOCATION
 
 # Create storage account
-az storage account create   --name $STORAGE   --location $LOCATION   --resource-group $RG   --sku Standard_LRS
+az storage account create \
+  --name $STORAGE \
+  --location $LOCATION \
+  --resource-group $RG \
+  --sku Standard_LRS
 
 # Create Azure Function App (Node.js 18)
-az functionapp create   --resource-group $RG   --consumption-plan-location $LOCATION   --runtime node   --runtime-version 18   --functions-version 4   --name $FUNC_APP   --storage-account $STORAGE
+az functionapp create \
+  --resource-group $RG \
+  --consumption-plan-location $LOCATION \
+  --runtime node \
+  --runtime-version 18 \
+  --functions-version 4 \
+  --name $FUNC_APP \
+  --storage-account $STORAGE
 
 # Create storage queue for events
-az storage queue create   --name $QUEUE   --account-name $STORAGE
+az storage queue create \
+  --name $QUEUE \
+  --account-name $STORAGE
 ```
 
 ---
@@ -124,7 +148,8 @@ module.exports = async function (context, myQueueItem) {
 ```bash
 cd lab6d-notify-func/EventNotifier
 npm init -y
-npm install @azure/communication-email
+npm install \
+  @azure/communication-email
 ```
 
 ---
@@ -133,12 +158,19 @@ npm install @azure/communication-email
 
 ### Step 1 – Create ACS Resource
 ```bash
-az communication create   --name $ACS_NAME   --data-location global   --resource-group $RG
+az communication create \
+  --name $ACS_NAME \
+  --data-location global \
+  --resource-group $RG
 ```
 
 ### Step 2 – Retrieve Connection String
 ```bash
-ACS_CONNECTION_STRING=$(az communication list-key   --name $ACS_NAME   --resource-group $RG   --query "primaryConnectionString"   --output tsv)
+ACS_CONNECTION_STRING=$(az communication list-key \
+  --name $ACS_NAME \
+  --resource-group $RG \
+  --query "primaryConnectionString" \
+  --output tsv)
 echo "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"
 ```
 
@@ -152,7 +184,13 @@ DoNotReply@${ACS_NAME}.azurecomm.net
 
 ## 🔐 4️⃣ Configure Function App Settings
 ```bash
-az functionapp config appsettings set   --name $FUNC_APP   --resource-group $RG   --settings     "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"     "EMAIL_SENDER=DoNotReply@${ACS_NAME}.azurecomm.net"     "EMAIL_RECIPIENT=<your_email_address>"
+az functionapp config appsettings set \
+  --name $FUNC_APP \
+  --resource-group $RG \
+  --settings \
+    "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING" \
+    "EMAIL_SENDER=DoNotReply@${ACS_NAME}.azurecomm.net" \
+    "EMAIL_RECIPIENT=<your_email_address>"
 ```
 
 ---
@@ -169,12 +207,18 @@ func azure functionapp publish $FUNC_APP
 
 ### Push a success message
 ```bash
-az storage message put   --queue-name $QUEUE   --account-name $STORAGE   --content '{"service":"payment-api","level":"info","message":"Transaction completed successfully"}'
+az storage message put \
+  --queue-name $QUEUE \
+  --account-name $STORAGE \
+  --content '{"service":"payment-api","level":"info","message":"Transaction completed successfully"}'
 ```
 
 ### Push an error message
 ```bash
-az storage message put   --queue-name $QUEUE   --account-name $STORAGE   --content '{"service":"user-api","level":"error","message":"Database connection timeout"}'
+az storage message put \
+  --queue-name $QUEUE \
+  --account-name $STORAGE \
+  --content '{"service":"user-api","level":"error","message":"Database connection timeout"}'
 ```
 
 ### Expected Results
@@ -187,7 +231,10 @@ az storage message put   --queue-name $QUEUE   --account-name $STORAGE   --conte
 
 ## 🧹 7️⃣ Clean Up
 ```bash
-az group delete --name $RG --yes --no-wait
+az group delete \
+  --name $RG \
+  --yes \
+  --no-wait
 ```
 
 ---
