@@ -63,12 +63,12 @@ az storage account create \
   --resource-group $RG \
   --sku Standard_LRS
 
-# Create Azure Function App (Node.js 18)
+# Create Azure Function App (Node.js 22)
 az functionapp create \
   --resource-group $RG \
   --consumption-plan-location $LOCATION \
   --runtime node \
-  --runtime-version 18 \
+  --runtime-version 22 \
   --functions-version 4 \
   --name $FUNC_APP \
   --storage-account $STORAGE
@@ -81,14 +81,41 @@ az storage queue create \
 
 ---
 
-## 💻 2️⃣ Function Code: Process Queue Messages and Send Email
+## 💻 2️⃣ Initialize Function App Project (Node.js)
+
+### Initialize the function app (Node.js v4 model)
+```bash
+# All files will be created in lab6d-notify-func/, with functions in lab6d-notify-func/src/functions/
+func init lab6d-notify-func --worker-runtime node --language javascript
+```
+
+###  Create a Queue Trigger Function
+```bash
+# Create a new queue trigger function in the correct subfolder
+cd lab6d-notify-func
+func new --name EventNotifier --template "Queue trigger" --language javascript
+# This creates src/functions/EventNotifier/index.js and function.json
+```
+
+###  Add Required NPM Packages
+```bash
+# Install required npm packages in the project root
+cd lab6d-notify-func
+npm install @azure/communication-email
+```
+
+---
+
+## 3️⃣ Function Code: Process Queue Messages and Send Email
 
 ### 📁 Project Structure
 ```
 lab6d-notify-func/
-└── EventNotifier/
-    ├── function.json
-    └── index.js
+└── src/
+    └── functions/
+        └── EventNotifier/
+            ├── function.json
+            └── index.js
 ```
 
 ### 🧠 index.js
@@ -146,27 +173,17 @@ module.exports = async function (context, myQueueItem) {
 }
 ```
 
-### 📦 Install Required Package
-```bash
-# Change to the function directory
-cd lab6d-notify-func/EventNotifier
-# Initialize a new Node.js project
-npm init -y
-# Install ACS email client package
-npm install \
-  @azure/communication-email
-```
-
 ---
 
-## ✉️ 3️⃣ Configure Azure Communication Services (ACS)
+## ✉️ 4️⃣ Configure Azure Communication Services (ACS)
 
 ### 📦 – Create ACS Resource
 ```bash
 # Create Azure Communication Services resource for email
 az communication create \
   --name $ACS_NAME \
-  --data-location global \
+  --location global \
+  --data-location australia \
   --resource-group $RG
 ```
 
@@ -184,12 +201,12 @@ echo "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"
 ### 🆔 – Identify Sender Domain
 The default sender domain is usually:
 ```bash
-DoNotReply@${ACS_NAME}.azurecomm.net
+echo DoNotReply@${ACS_NAME}.azurecomm.net
 ```
 
 ---
 
-## 🔐 4️⃣ Configure Function App Settings
+## 🔐 5️⃣ Configure Function App Settings
 ```bash
 # Set environment variables for ACS and email addresses in the Function App
 az functionapp config appsettings set \
@@ -203,7 +220,7 @@ az functionapp config appsettings set \
 
 ---
 
-## 🚀 5️⃣ Deploy Function to Azure
+## 🚀 6️⃣ Deploy Function to Azure
 ```bash
 # Deploy the function app to Azure
 func azure functionapp publish $FUNC_APP
@@ -211,7 +228,7 @@ func azure functionapp publish $FUNC_APP
 
 ---
 
-## 🧪 6️⃣ Test the Workflow
+## 🧪 7️⃣ Test the Workflow
 
 ### Push a success message
 ```bash
@@ -239,7 +256,7 @@ az storage message put \
 
 ---
 
-## 🧹 7️⃣ Clean Up
+## 🧹 6️⃣ Clean Up
 ```bash
 # Delete the resource group and all resources
 az group delete \
@@ -250,7 +267,7 @@ az group delete \
 
 ---
 
-## ✅ 8️⃣ Success Criteria
+## ✅ Success Criteria
 
 | Verification Step | Expected Result |
 |--------------------|----------------|
