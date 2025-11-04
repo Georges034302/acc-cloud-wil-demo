@@ -1,4 +1,4 @@
-# 📩 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and ACS Email 
+# 💬 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and Microsoft Teams Webhook
 
 <img width="1536" height="619" alt="IMG" src="https://github.com/user-attachments/assets/689aab98-9019-4926-833c-2329e29a3cb9" />
 
@@ -7,66 +7,62 @@
 ## 🎯 Objectives
 
 In this lab, you will:
-- Build a **serverless Azure Function (Python)** triggered by a **Storage Queue**.
-- Process both **error** and **success** messages from the same queue.
-- Send email notifications via **Azure Communication Services (ACS)**.
-- Demonstrate a simple, event-driven alerting workflow with no third-party dependencies.
+- Build a **serverless Azure Function (Node 20 LTS)** triggered by a **Storage Queue**  
+- Process both **info** and **error** events  
+- Send notifications to a **Microsoft Teams channel** via **Incoming Webhook**  
+- Demonstrate a fully event-driven alerting workflow with no external dependencies
 
 ---
 
 ## 🧭 Prerequisites
 
-- ✅ Active **Azure Subscription**
-- ✅ **Azure CLI** installed (v2.57+ recommended)
-- ✅ **Python 3.11+** and **Azure Functions Core Tools v4** installed
+- ✅ Active **Azure Subscription**  
+- ✅ **Azure CLI v2.57+** installed  
+- ✅ **Node.js 20 LTS** installed (`node -v`)  
+- ✅ **Azure Functions Core Tools v4**
   ```bash
-    # Check if Azure Functions Core Tools v4 is installed
-    func --version || echo "Azure Functions Core Tools not found. Installing..."
-    # Install Azure Functions Core Tools v4 (requires Python)
-    npm install -g azure-functions-core-tools@4 --unsafe-perm true
-    # Verify installation
-    func --version
+  npm install -g azure-functions-core-tools@4 --unsafe-perm true
+  func --version
   ```
-- ✅ Permission to create Azure resources (Resource Group, Storage, Function App, ACS)
-- ✅ Valid **email address** to receive alerts
+- ✅ **Microsoft Teams** channel with an **Incoming Webhook** created  
+  (Channel → Connectors → Incoming Webhook → copy the Webhook URL)
 
 ---
 
-## ⚙️ 1️⃣ CLI Setup: Resource Group, Storage, Function App, and Queue
+## ⚙️ 1️⃣ Create Azure Resources
 
 ```bash
-# Set up environment variables
+# Set environment variables for resource names and location
 export LOCATION="australiaeast"
 export RG="rg-lab6d-notify"
 export STORAGE="stnotify$RANDOM"
 export FUNC_APP="func-notify$RANDOM"
 export QUEUE="event-queue"
-export ACS_NAME="acs-lab6d-notify"
 
-# Create resource group
+# Create a new resource group in Azure
 az group create \
   --name $RG \
   --location $LOCATION
 
-# Create storage account
+# Create a storage account for queue and function app
 az storage account create \
   --name $STORAGE \
   --location $LOCATION \
   --resource-group $RG \
   --sku Standard_LRS
 
-# Create Azure Function App (Python 3.11)
+# Create an Azure Function App using Node.js 20 LTS
 az functionapp create \
   --resource-group $RG \
   --consumption-plan-location $LOCATION \
-  --runtime python \
-  --runtime-version 3.11 \
+  --runtime node \
+  --runtime-version 20 \
   --functions-version 4 \
   --name $FUNC_APP \
   --storage-account $STORAGE \
   --os-type Linux
 
-# Create storage queue for events
+# Create a storage queue for event messages
 az storage queue create \
   --name $QUEUE \
   --account-name $STORAGE
@@ -74,104 +70,44 @@ az storage queue create \
 
 ---
 
+## 💻 2️⃣ Initialize Function Project (Node 20)
 
-## 💻 2️⃣ Initialize Function App Project (Python)
-
-### Initialize the function app (Python v4 model)
 ```bash
-func init lab6d-notify-func --worker-runtime python
-```
+PROJECT="lab6d-notify-func"
+FUNCTION_NAME="EventNotifier"
 
-### Create a Queue Trigger Function
-```bash
-# This creates EventNotifier/function.json and __init__.py with correct queue and connection settings
-cd lab6d-notify-func
+# Initialize a new Azure Functions project (Node.js)
+func init $PROJECT \
+  --worker-runtime node \
+  --language javascript
+
+# Change directory to the new project folder
+cd $PROJECT
+
+# Create a new Queue Trigger function
 func new \
-  --name EventNotifier \
-  --template "Queue trigger" \
-  --language python \
-  --param queueName="$QUEUE" \
-  --param connection="AzureWebJobsStorage"
-```
-
-### Add Required Python Packages
-Create a `requirements.txt` in the project root:
-```
-azure-functions
-azure-communication-email
-```
-Then install locally for testing:
-```bash
-pip install -r requirements.txt
+  --name $FUNCTION_NAME \
+  --template "Queue trigger"
 ```
 
 ---
 
-
-## 3️⃣ Function Code: Process Queue Messages and Send Email (Python)
+## 🧠 3️⃣ Update Function Code to Post to Teams
 
 ### 📁 Project Structure
 ```
 lab6d-notify-func/
-├── requirements.txt
+├── package.json
 ├── EventNotifier/
-│   ├── __init__.py
-│   └── function.json
+│   ├── function.json
+│   └── index.js
+└── host.json
 ```
 
-### 🧠 __init__.py
-```python
-import os
-import json
-import logging
-from azure.communication.email import EmailClient
-
-def main(myQueueItem: str):
-    logging.info(f"Received message: {myQueueItem}")
-
-    # Debug: Log environment variables
-    logging.info(f"ACS_CONNECTION_STRING: {os.environ.get('ACS_CONNECTION_STRING')}")
-    logging.info(f"EMAIL_SENDER: {os.environ.get('EMAIL_SENDER')}")
-    logging.info(f"EMAIL_RECIPIENT: {os.environ.get('EMAIL_RECIPIENT')}")
-
-    try:
-        data = json.loads(myQueueItem)
-        logging.info(f"Parsed message data: {data}")
-    except Exception as e:
-        logging.error(f"Invalid JSON: {e}")
-        return
-
-    subject = f"✅ SUCCESS in {data.get('service', 'unknown')}" if data.get('level') != 'error' \
-              else f"🚨 ERROR in {data.get('service', 'unknown')}"
-    body = f"{data.get('message', '')}\n\nTimestamp: {__import__('datetime').datetime.utcnow()}"
-
-    try:
-        client = EmailClient.from_connection_string(os.environ["ACS_CONNECTION_STRING"])
-        message = {
-            "senderAddress": os.environ["EMAIL_SENDER"],
-            "recipients": {"to": [{"address": os.environ["EMAIL_RECIPIENT"]}]},
-            "content": {"subject": subject, "plainText": body}
-        }
-
-        poller = client.begin_send(message)
-        result = poller.result()  # Wait for completion
-
-        logging.info(f"Email send result: {result}")
-
-        if result.get("status") == "Succeeded":
-            logging.info(f"Email sent successfully for {data.get('level', 'unknown')} event.")
-        else:
-            logging.error(f"Email send failed: {result}")
-    except Exception as e:
-        logging.error(f"Email sending failed: {e}")
-
-```
-
-
-### ⚙️ function.json
+### 🧩 EventNotifier/function.json
 ```json
 {
-  "scriptFile": "__init__.py",
+  "scriptFile": "index.js",
   "bindings": [
     {
       "name": "myQueueItem",
@@ -184,109 +120,124 @@ def main(myQueueItem: str):
 }
 ```
 
+### 💻 EventNotifier/index.js
+```javascript
+import fetch from "node-fetch";
+
+export async function main(context, myQueueItem) {
+  context.log("=== EventNotifier START ===");
+  context.log("Raw queue message:", myQueueItem);
+
+  const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+  if (!webhookUrl) {
+    context.log.error("❌ Missing TEAMS_WEBHOOK_URL setting.");
+    return;
+  }
+
+  let data;
+  try {
+    data = typeof myQueueItem === "string" ? JSON.parse(myQueueItem) : myQueueItem;
+  } catch (err) {
+    context.log.error("Invalid JSON:", err.message);
+    return;
+  }
+
+  const service = data.service || "unknown";
+  const level = data.level || "info";
+  const message = data.message || "No message";
+
+  const emoji = level === "error" ? "🚨" : "✅";
+  const title = `${emoji} ${level.toUpperCase()} in ${service}`;
+  const text = `${message}\n\nTimestamp: ${new Date().toISOString()}`;
+
+  try {
+    const payload = { text: `${title}\n${text}` };
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.ok) {
+      context.log(`📨 Teams notification sent successfully for ${service}`);
+    } else {
+      context.log.error(`Teams webhook failed with status: ${response.status}`);
+    }
+  } catch (error) {
+    context.log.error("Failed to send message to Teams:", error);
+  }
+}
+```
+
+### 📦 Install Dependencies
+```bash
+# Install node-fetch for HTTP requests to Teams webhook
+npm install node-fetch
+```
+
 ---
 
-## ✉️ 4️⃣ Configure Azure Communication Services (ACS)
+## 🔐 4️⃣ Configure Application Settings
 
-### 📦 – Create Communication Service
-```bash
-az communication create \
-  --name $ACS_NAME \
-  --resource-group $RG \
-  --data-location Global
-```
-
-### 📧 – Create Email Communication Service
-```bash
-az communication email create \
-  --name ACS-domain-queue-notifier \
-  --resource-group $RG \
-  --data-location Global
-```
-
-### 🌐 – Create Azure-Managed Email Domain
-```bash
-az communication email domain create \
-  --name AzureManagedDomain \
-  --resource-group $RG \
-  --email-service-name ACS-domain-queue-notifier \
-  --domain-management AzureManaged
-```
-
-### 👤 – Create Sender Identity
-```bash
-az communication email domain sender-username create \
-  --domain-name AzureManagedDomain \
-  --sender-username DoNotReply \
-  --resource-group $RG \
-  --email-service-name ACS-domain-queue-notifier
-  --name DoNotReply
-```
-
-### 🔑 – Retrieve and Store Connection String
-```bash
-ACS_CONNECTION_STRING=$(az communication email show \
-  --name ACS-domain-queue-notifier \
-  --resource-group $RG \
-  --query "data.connectionString" \
-  --output tsv)
-echo "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"
-```
-
-> ✅ The Function App is now connected to a verified Azure-managed domain and ready to send emails via Azure Communication Email Service.
-
----
-
-## 🔐 5️⃣ Configure Function App Settings
-```bash
+# Set the Teams webhook URL in Function App settings (replace with your actual webhook URL)
 az functionapp config appsettings set \
   --name $FUNC_APP \
   --resource-group $RG \
-  --settings \
-    "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING" \
-    "EMAIL_SENDER=DoNotReply@AzureManagedDomain.australiaeast.azurecomm.net" \
-    "EMAIL_RECIPIENT=<your_email_address>"
+  --settings "TEAMS_WEBHOOK_URL=<YOUR_TEAMS_WEBHOOK_URL>"
 ```
 
 ---
 
+## 🚀 5️⃣ Deploy Function to Azure
 
-## 🚀 6️⃣ Deploy Function to Azure
 ```bash
+# Deploy the function app code to Azure
 func azure functionapp publish $FUNC_APP
 ```
 
 ---
 
-## 🧪 7️⃣ Test the Workflow
+## 🧪 6️⃣ Test the Workflow
 
-### Push a success message
+### ✅ Push a Success Message
 ```bash
+# Send a success message to the queue to trigger notification
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
   --content '{"service":"payment-api","level":"info","message":"Transaction completed successfully"}'
 ```
 
-### Push an error message
+### 🚨 Push an Error Message
 ```bash
+# Send an error message to the queue to trigger notification
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
   --content '{"service":"user-api","level":"error","message":"Database connection timeout"}'
 ```
 
-### Expected Results
-- The Function triggers automatically for each queue message.
-- Two emails should be received:
-  - Subject: “✅ SUCCESS in payment-api”
-  - Subject: “🚨 ERROR in user-api”
+### 🔍 Expected Result
+Each message triggers the Function, and your Teams channel displays:
+
+```
+✅ INFO in payment-api
+Transaction completed successfully
+Timestamp: 2025-11-04T09:00:00Z
+```
+
+```
+🚨 ERROR in user-api
+Database connection timeout
+Timestamp: 2025-11-04T09:01:00Z
+```
 
 ---
 
+## 🧹 7️⃣ Clean Up Resources
 
-## 🧹 8️⃣ Clean Up
 ```bash
+# Delete the resource group and all resources created in this lab
 az group delete \
   --name $RG \
   --yes \
@@ -295,20 +246,16 @@ az group delete \
 
 ---
 
-
 ## ✅ Success Criteria
 
 | Verification Step | Expected Result |
 |--------------------|----------------|
 | Function deployed successfully | ✅ |
 | Queue messages processed automatically | ✅ |
-| Success email received | ✅ |
-| Error email received | ✅ |
+| Teams notifications received | ✅ |
 | Resource group deleted | ✅ |
 
 ---
 
 ### 🏁 Outcome
-You’ve built an **event-driven serverless email alert system** using only Azure-native services:  
-**Storage Queue + Function + ACS Email** (Python).  
-This is a clean, reliable demonstration of **event-driven automation** in Azure.
+You have built an **event-driven notification system** using **Azure Functions (Node 20 LTS)**, **Azure Storage Queue**, and **Microsoft Teams Webhooks** — a lightweight, enterprise-friendly, and easily extensible approach to real-time alerting in Azure.
