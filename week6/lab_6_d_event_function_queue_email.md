@@ -146,8 +146,11 @@ module.exports = async function (context, myQueueItem) {
 
 ### 📦 Install Required Package
 ```bash
+# Change to the function directory
 cd lab6d-notify-func/EventNotifier
+# Initialize a new Node.js project
 npm init -y
+# Install ACS email client package
 npm install \
   @azure/communication-email
 ```
@@ -156,16 +159,18 @@ npm install \
 
 ## ✉️ 3️⃣ Configure Azure Communication Services (ACS)
 
-### Step 1 – Create ACS Resource
+### 📦 – Create ACS Resource
 ```bash
+# Create Azure Communication Services resource for email
 az communication create \
   --name $ACS_NAME \
   --data-location global \
   --resource-group $RG
 ```
 
-### Step 2 – Retrieve Connection String
+### 🔗 – Retrieve Connection String
 ```bash
+# Retrieve the ACS connection string for email client
 ACS_CONNECTION_STRING=$(az communication list-key \
   --name $ACS_NAME \
   --resource-group $RG \
@@ -174,9 +179,9 @@ ACS_CONNECTION_STRING=$(az communication list-key \
 echo "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"
 ```
 
-### Step 3 – Identify Sender Domain
+### 🆔 – Identify Sender Domain
 The default sender domain is usually:
-```
+```bash
 DoNotReply@${ACS_NAME}.azurecomm.net
 ```
 
@@ -184,6 +189,7 @@ DoNotReply@${ACS_NAME}.azurecomm.net
 
 ## 🔐 4️⃣ Configure Function App Settings
 ```bash
+# Set environment variables for ACS and email addresses in the Function App
 az functionapp config appsettings set \
   --name $FUNC_APP \
   --resource-group $RG \
@@ -197,7 +203,7 @@ az functionapp config appsettings set \
 
 ## 🚀 5️⃣ Deploy Function to Azure
 ```bash
-# From your project root
+# Deploy the function app to Azure
 func azure functionapp publish $FUNC_APP
 ```
 
@@ -207,6 +213,7 @@ func azure functionapp publish $FUNC_APP
 
 ### Push a success message
 ```bash
+# Push a success message to the queue
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
@@ -215,6 +222,7 @@ az storage message put \
 
 ### Push an error message
 ```bash
+# Push an error message to the queue
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
@@ -231,6 +239,7 @@ az storage message put \
 
 ## 🧹 7️⃣ Clean Up
 ```bash
+# Delete the resource group and all resources
 az group delete \
   --name $RG \
   --yes \
