@@ -180,6 +180,7 @@ npm install node-fetch
 ## 🔐 4️⃣ Configure Application Settings
 
 # Set the Teams webhook URL in Function App settings (replace with your actual webhook URL)
+```bash
 az functionapp config appsettings set \
   --name $FUNC_APP \
   --resource-group $RG \
