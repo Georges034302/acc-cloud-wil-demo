@@ -102,7 +102,7 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
   - [lab_6_c_aks_scalable_app.md](week6/lab_6_c_aks_scalable_app.md):  
     *Deploy and scale a containerized web application on Azure Kubernetes Service (AKS) using CLI, Portal, and ARM templates.*
   - [lab_6_d_event_function_queue_teams.md](week6/lab_6_d_event_function_queue_teams.md):  
-    *Build an event-driven notification system: Azure Function (Python or Node.js) triggered by Storage Queue, sends error/success notifications via Microsoft Teams Webhook. No third-party dependencies.*
+    *Build an event-driven notification system: Azure Function (Node.js) triggered by Storage Queue, sends error/success notifications via Microsoft Teams Webhook.*
 
 </details>
 
