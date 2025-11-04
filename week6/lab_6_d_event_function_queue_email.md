@@ -1,13 +1,11 @@
-# 📩 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and ACS Email
 
-<img width="1536" height="619" alt="IMG" src="https://github.com/user-attachments/assets/dbcd7808-17a0-4dde-abcb-47da61d26c1c" />
-
+# 📩 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and ACS Email 
 ---
 
 ## 🎯 Objectives
 
 In this lab, you will:
-- Build a **serverless Azure Function (Node.js)** triggered by a **Storage Queue**.
+- Build a **serverless Azure Function (Python)** triggered by a **Storage Queue**.
 - Process both **error** and **success** messages from the same queue.
 - Send email notifications via **Azure Communication Services (ACS)**.
 - Demonstrate a simple, event-driven alerting workflow with no third-party dependencies.
@@ -18,12 +16,11 @@ In this lab, you will:
 
 - ✅ Active **Azure Subscription**
 - ✅ **Azure CLI** installed (v2.57+ recommended)
-- ✅ **Node.js 18+** and **Azure Functions Core Tools v4** installed
-- Azure CLI and Azure Functions Core Tools v4 installed
+- ✅ **Python 3.11+** and **Azure Functions Core Tools v4** installed
   ```bash
     # Check if Azure Functions Core Tools v4 is installed
     func --version || echo "Azure Functions Core Tools not found. Installing..."
-    # Install Azure Functions Core Tools v4 (requires Node.js)
+    # Install Azure Functions Core Tools v4 (requires Python)
     npm install -g azure-functions-core-tools@4 --unsafe-perm true
     # Verify installation
     func --version
@@ -36,20 +33,13 @@ In this lab, you will:
 ## ⚙️ 1️⃣ CLI Setup: Resource Group, Storage, Function App, and Queue
 
 ```bash
-# ===========================
 # Set up environment variables
-# ===========================
-
-LOCATION="australiaeast"
-RG="rg-lab6d-notify"
-STORAGE="stnotify$RANDOM"
-FUNC_APP="func-notify$RANDOM"
-QUEUE="event-queue"
-ACS_NAME="acs-lab6d-notify"
-
-# ===========================
-# Create Azure resources
-# ===========================
+export LOCATION="australiaeast"
+export RG="rg-lab6d-notify"
+export STORAGE="stnotify$RANDOM"
+export FUNC_APP="func-notify$RANDOM"
+export QUEUE="event-queue"
+export ACS_NAME="acs-lab6d-notify"
 
 # Create resource group
 az group create \
@@ -63,12 +53,12 @@ az storage account create \
   --resource-group $RG \
   --sku Standard_LRS
 
-# Create Azure Function App (Node.js 22)
+# Create Azure Function App (Python 3.11)
 az functionapp create \
   --resource-group $RG \
   --consumption-plan-location $LOCATION \
-  --runtime node \
-  --runtime-version 22 \
+  --runtime python \
+  --runtime-version 3.11 \
   --functions-version 4 \
   --name $FUNC_APP \
   --storage-account $STORAGE
@@ -81,86 +71,84 @@ az storage queue create \
 
 ---
 
-## 💻 2️⃣ Initialize Function App Project (Node.js)
 
-### Initialize the function app (Node.js v4 model)
+## 💻 2️⃣ Initialize Function App Project (Python)
+
+### Initialize the function app (Python v4 model)
 ```bash
-# All files will be created in lab6d-notify-func/, with functions in lab6d-notify-func/src/functions/
-func init lab6d-notify-func --worker-runtime node --language javascript
+func init lab6d-notify-func --worker-runtime python
 ```
 
-###  Create a Queue Trigger Function
+### Create a Queue Trigger Function
 ```bash
-# Create a new queue trigger function in the correct subfolder
 cd lab6d-notify-func
-func new --name EventNotifier --template "Queue trigger" --language javascript
-# This creates src/functions/EventNotifier/index.js and function.json
+func new --name EventNotifier --template "Azure Queue Storage trigger" --language python
+# This creates EventNotifier/function.json and __init__.py
 ```
 
-###  Add Required NPM Packages
+### Add Required Python Packages
+Create a `requirements.txt` in the project root:
+```
+azure-functions
+azure-communication-email
+```
+Then install locally for testing:
 ```bash
-# Install required npm packages in the project root
-cd lab6d-notify-func
-npm install @azure/communication-email
+pip install -r requirements.txt
 ```
 
 ---
 
-## 3️⃣ Function Code: Process Queue Messages and Send Email
+
+## 3️⃣ Function Code: Process Queue Messages and Send Email (Python)
 
 ### 📁 Project Structure
 ```
 lab6d-notify-func/
-└── src/
-    └── functions/
-        └── EventNotifier/
-            ├── function.json
-            └── index.js
+├── requirements.txt
+├── EventNotifier/
+│   ├── __init__.py
+│   └── function.json
 ```
 
-### 🧠 index.js
-```javascript
-const { EmailClient } = require("@azure/communication-email");
+### 🧠 __init__.py
+```python
+import os
+import json
+from azure.communication.email import EmailClient
+import logging
 
-module.exports = async function (context, myQueueItem) {
-  context.log("Received message:", myQueueItem);
+def main(myQueueItem: str):
+    logging.info(f"Received message: {myQueueItem}")
 
-  // Parse incoming message (JSON string)
-  let data;
-  try {
-    data = JSON.parse(myQueueItem);
-  } catch (err) {
-    context.log("Invalid JSON format in queue message.");
-    return;
-  }
+    try:
+        data = json.loads(myQueueItem)
+    except Exception as e:
+        logging.error(f"Invalid JSON: {e}")
+        return
 
-  // Initialize ACS email client
-  const emailClient = new EmailClient(process.env.ACS_CONNECTION_STRING);
+    subject = f"✅ SUCCESS in {data['service']}" if data.get('level') != 'error' \
+              else f"🚨 ERROR in {data['service']}"
+    body = f"{data['message']}\n\nTimestamp: {__import__('datetime').datetime.utcnow()}"
 
-  // Build subject and body based on event type
-  const isError = data.level && data.level.toLowerCase() === "error";
-  const subject = isError
-    ? `🚨 ERROR in ${data.service}`
-    : `✅ SUCCESS in ${data.service}`;
-  const body = `${data.message}\n\nTimestamp: ${new Date().toISOString()}`;
-
-  try {
-    await emailClient.send({
-      senderAddress: process.env.EMAIL_SENDER,
-      content: { subject, plainText: body },
-      recipients: { to: [{ address: process.env.EMAIL_RECIPIENT }] },
-    });
-
-    context.log(`Email sent successfully for ${data.level} event.`);
-  } catch (err) {
-    context.log(`Email sending failed: ${err.message}`);
-  }
-};
+    client = EmailClient.from_connection_string(os.environ["ACS_CONNECTION_STRING"])
+    try:
+        message = {
+            "senderAddress": os.environ["EMAIL_SENDER"],
+            "recipients": {"to": [{"address": os.environ["EMAIL_RECIPIENT"]}]},
+            "content": {"subject": subject, "plainText": body}
+        }
+        client.send(message)
+        logging.info(f"Email sent successfully for {data['level']} event.")
+    except Exception as e:
+        logging.error(f"Email sending failed: {e}")
 ```
+
 
 ### ⚙️ function.json
 ```json
 {
+  "scriptFile": "__init__.py",
   "bindings": [
     {
       "name": "myQueueItem",
@@ -175,11 +163,11 @@ module.exports = async function (context, myQueueItem) {
 
 ---
 
+
 ## ✉️ 4️⃣ Configure Azure Communication Services (ACS)
 
 ### 📦 – Create ACS Resource
 ```bash
-# Create Azure Communication Services resource for email
 az communication create \
   --name $ACS_NAME \
   --location global \
@@ -189,7 +177,6 @@ az communication create \
 
 ### 🔗 – Retrieve Connection String
 ```bash
-# Retrieve the ACS connection string for email client
 ACS_CONNECTION_STRING=$(az communication list-key \
   --name $ACS_NAME \
   --resource-group $RG \
@@ -206,9 +193,9 @@ echo DoNotReply@${ACS_NAME}.azurecomm.net
 
 ---
 
+
 ## 🔐 5️⃣ Configure Function App Settings
 ```bash
-# Set environment variables for ACS and email addresses in the Function App
 az functionapp config appsettings set \
   --name $FUNC_APP \
   --resource-group $RG \
@@ -220,19 +207,19 @@ az functionapp config appsettings set \
 
 ---
 
+
 ## 🚀 6️⃣ Deploy Function to Azure
 ```bash
-# Deploy the function app to Azure
 func azure functionapp publish $FUNC_APP
 ```
 
 ---
 
+
 ## 🧪 7️⃣ Test the Workflow
 
 ### Push a success message
 ```bash
-# Push a success message to the queue
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
@@ -241,7 +228,6 @@ az storage message put \
 
 ### Push an error message
 ```bash
-# Push an error message to the queue
 az storage message put \
   --queue-name $QUEUE \
   --account-name $STORAGE \
@@ -256,9 +242,9 @@ az storage message put \
 
 ---
 
-## 🧹 6️⃣ Clean Up
+
+## 🧹 8️⃣ Clean Up
 ```bash
-# Delete the resource group and all resources
 az group delete \
   --name $RG \
   --yes \
@@ -266,6 +252,7 @@ az group delete \
 ```
 
 ---
+
 
 ## ✅ Success Criteria
 
@@ -281,5 +268,5 @@ az group delete \
 
 ### 🏁 Outcome
 You’ve built an **event-driven serverless email alert system** using only Azure-native services:  
-**Storage Queue + Function + ACS Email**.  
+**Storage Queue + Function + ACS Email** (Python).  
 This is a clean, reliable demonstration of **event-driven automation** in Azure.
