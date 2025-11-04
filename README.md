@@ -92,17 +92,17 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
 <details>
   <summary>Week 6: Serverless & Event-Driven Architectures</summary>
 
-  Implement serverless and event-driven solutions using Azure Functions, API Management, AKS, and Microsoft Graph.
+  Learn to build scalable, automated, and event-driven solutions using Azure Functions, API Management, AKS, and notification services. This week covers serverless triggers, queue-based workflows, scalable container orchestration, and real-time notifications.
 
   **Labs for this week:**
   - [Lab_6_a_APIM_function_queue.md](week6/Lab_6_a_APIM_function_queue.md):  
-    *Expose an HTTP-triggered Node.js Azure Function via API Management with Queue output binding. No subscription key required.*
+    *Expose an HTTP-triggered Node.js Azure Function via API Management with output binding to Azure Storage Queue. No subscription key required.*
   - [lab_6_b_azure_function_blob_trigger.md](week6/lab_6_b_azure_function_blob_trigger.md):  
-    *Serverless data ingestion pipeline: Blob Storage trigger parses CSV and inserts records into Azure Table Storage.*
+    *Create a serverless data ingestion pipeline: Azure Function (Python) triggered by Blob Storage, parses CSV, and inserts records into Azure Table Storage.*
   - [lab_6_c_aks_scalable_app.md](week6/lab_6_c_aks_scalable_app.md):  
-    *Deploy and scale a containerized application on Azure Kubernetes Service (AKS) using CLI, Portal, and ARM.*
-  - [lab_6_d_event_function_queue_email.md](week6/lab_6_d_event_function_queue_email.md):  
-    *Event-driven notification system: Azure Function (Node.js) triggered by Storage Queue, sends error/success email alerts via Azure Communication Services (ACS). No third-party dependencies.*
+    *Deploy and scale a containerized web application on Azure Kubernetes Service (AKS) using CLI, Portal, and ARM templates.*
+  - [lab_6_d_event_function_queue_teams.md](week6/lab_6_d_event_function_queue_teams.md):  
+    *Build an event-driven notification system: Azure Function (Python or Node.js) triggered by Storage Queue, sends error/success notifications via Microsoft Teams Webhook. No third-party dependencies.*
 
 </details>
 
