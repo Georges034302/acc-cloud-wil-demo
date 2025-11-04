@@ -1,4 +1,3 @@
-
 # 📩 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and ACS Email 
 
 <img width="1536" height="619" alt="IMG" src="https://github.com/user-attachments/assets/689aab98-9019-4926-833c-2329e29a3cb9" />
@@ -64,7 +63,8 @@ az functionapp create \
   --runtime-version 3.11 \
   --functions-version 4 \
   --name $FUNC_APP \
-  --storage-account $STORAGE
+  --storage-account $STORAGE \
+  --os-type Linux
 
 # Create storage queue for events
 az storage queue create \
@@ -84,9 +84,14 @@ func init lab6d-notify-func --worker-runtime python
 
 ### Create a Queue Trigger Function
 ```bash
+# This creates EventNotifier/function.json and __init__.py with correct queue and connection settings
 cd lab6d-notify-func
-func new --name EventNotifier --template "Azure Queue Storage trigger" --language python
-# This creates EventNotifier/function.json and __init__.py
+func new \
+  --name EventNotifier \
+  --template "Queue trigger" \
+  --language python \
+  --param queueName="$QUEUE" \
+  --param connection="AzureWebJobsStorage"
 ```
 
 ### Add Required Python Packages
@@ -118,33 +123,48 @@ lab6d-notify-func/
 ```python
 import os
 import json
-from azure.communication.email import EmailClient
 import logging
+from azure.communication.email import EmailClient
 
 def main(myQueueItem: str):
     logging.info(f"Received message: {myQueueItem}")
 
+    # Debug: Log environment variables
+    logging.info(f"ACS_CONNECTION_STRING: {os.environ.get('ACS_CONNECTION_STRING')}")
+    logging.info(f"EMAIL_SENDER: {os.environ.get('EMAIL_SENDER')}")
+    logging.info(f"EMAIL_RECIPIENT: {os.environ.get('EMAIL_RECIPIENT')}")
+
     try:
         data = json.loads(myQueueItem)
+        logging.info(f"Parsed message data: {data}")
     except Exception as e:
         logging.error(f"Invalid JSON: {e}")
         return
 
-    subject = f"✅ SUCCESS in {data['service']}" if data.get('level') != 'error' \
-              else f"🚨 ERROR in {data['service']}"
-    body = f"{data['message']}\n\nTimestamp: {__import__('datetime').datetime.utcnow()}"
+    subject = f"✅ SUCCESS in {data.get('service', 'unknown')}" if data.get('level') != 'error' \
+              else f"🚨 ERROR in {data.get('service', 'unknown')}"
+    body = f"{data.get('message', '')}\n\nTimestamp: {__import__('datetime').datetime.utcnow()}"
 
-    client = EmailClient.from_connection_string(os.environ["ACS_CONNECTION_STRING"])
     try:
+        client = EmailClient.from_connection_string(os.environ["ACS_CONNECTION_STRING"])
         message = {
             "senderAddress": os.environ["EMAIL_SENDER"],
             "recipients": {"to": [{"address": os.environ["EMAIL_RECIPIENT"]}]},
             "content": {"subject": subject, "plainText": body}
         }
-        client.send(message)
-        logging.info(f"Email sent successfully for {data['level']} event.")
+
+        poller = client.begin_send(message)
+        result = poller.result()  # Wait for completion
+
+        logging.info(f"Email send result: {result}")
+
+        if result.get("status") == "Succeeded":
+            logging.info(f"Email sent successfully for {data.get('level', 'unknown')} event.")
+        else:
+            logging.error(f"Email send failed: {result}")
     except Exception as e:
         logging.error(f"Email sending failed: {e}")
+
 ```
 
 
@@ -166,36 +186,56 @@ def main(myQueueItem: str):
 
 ---
 
-
 ## ✉️ 4️⃣ Configure Azure Communication Services (ACS)
 
-### 📦 – Create ACS Resource
+### 📦 – Create Communication Service
 ```bash
 az communication create \
   --name $ACS_NAME \
-  --location global \
-  --data-location australia \
-  --resource-group $RG
+  --resource-group $RG \
+  --data-location Global
 ```
 
-### 🔗 – Retrieve Connection String
+### 📧 – Create Email Communication Service
 ```bash
-ACS_CONNECTION_STRING=$(az communication list-key \
-  --name $ACS_NAME \
+az communication email create \
+  --name ACS-domain-queue-notifier \
   --resource-group $RG \
-  --query "primaryConnectionString" \
+  --data-location Global
+```
+
+### 🌐 – Create Azure-Managed Email Domain
+```bash
+az communication email domain create \
+  --name AzureManagedDomain \
+  --resource-group $RG \
+  --email-service-name ACS-domain-queue-notifier \
+  --domain-management AzureManaged
+```
+
+### 👤 – Create Sender Identity
+```bash
+az communication email domain sender-username create \
+  --domain-name AzureManagedDomain \
+  --sender-username DoNotReply \
+  --resource-group $RG \
+  --email-service-name ACS-domain-queue-notifier
+  --name DoNotReply
+```
+
+### 🔑 – Retrieve and Store Connection String
+```bash
+ACS_CONNECTION_STRING=$(az communication email show \
+  --name ACS-domain-queue-notifier \
+  --resource-group $RG \
+  --query "data.connectionString" \
   --output tsv)
 echo "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING"
 ```
 
-### 🆔 – Identify Sender Domain
-The default sender domain is usually:
-```bash
-echo DoNotReply@${ACS_NAME}.azurecomm.net
-```
+> ✅ The Function App is now connected to a verified Azure-managed domain and ready to send emails via Azure Communication Email Service.
 
 ---
-
 
 ## 🔐 5️⃣ Configure Function App Settings
 ```bash
@@ -204,7 +244,7 @@ az functionapp config appsettings set \
   --resource-group $RG \
   --settings \
     "ACS_CONNECTION_STRING=$ACS_CONNECTION_STRING" \
-    "EMAIL_SENDER=DoNotReply@${ACS_NAME}.azurecomm.net" \
+    "EMAIL_SENDER=DoNotReply@AzureManagedDomain.australiaeast.azurecomm.net" \
     "EMAIL_RECIPIENT=<your_email_address>"
 ```
 
@@ -217,7 +257,6 @@ func azure functionapp publish $FUNC_APP
 ```
 
 ---
-
 
 ## 🧪 7️⃣ Test the Workflow
 

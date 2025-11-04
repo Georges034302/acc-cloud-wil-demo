@@ -9,5 +9,7 @@ vscode
 node_modules/
 # Ignore Node.js dependencies
 
-
+venv/
+.venv/
+# Ignore Python virtual environments
 
