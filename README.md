@@ -101,8 +101,8 @@ This guide provides a week-by-week overview of the `Advanced Cloud Computing` IA
     *Serverless data ingestion pipeline: Blob Storage trigger parses CSV and inserts records into Azure Table Storage.*
   - [lab_6_c_aks_scalable_app.md](week6/lab_6_c_aks_scalable_app.md):  
     *Deploy and scale a containerized application on Azure Kubernetes Service (AKS) using CLI, Portal, and ARM.*
-  - [lab_6_d_email_to_sms_function.md](week6/lab_6_d_email_to_sms_function.md):  
-    *Event-driven serverless system: Azure Function listens for new emails via Microsoft Graph webhook and sends SMS alerts using Twilio.*
+  - [lab_6_d_event_function_queue_email.md](week6/lab_6_d_event_function_queue_email.md):  
+    *Event-driven notification system: Azure Function (Node.js) triggered by Storage Queue, sends error/success email alerts via Azure Communication Services (ACS). No third-party dependencies.*
 
 </details>
 
