@@ -1,6 +1,6 @@
 # 💬 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and Microsoft Teams Webhook
 
-<img width="1536" height="1024" alt="IMG" src="https://github.com/user-attachments/assets/38d00f78-0404-4a0e-bf89-014d95681749" />
+<img width="1536" height="453" alt="IMG" src="https://github.com/user-attachments/assets/32ffc5b1-a1b8-4e50-8180-56501fb99f9c" />
 
 ---
 
