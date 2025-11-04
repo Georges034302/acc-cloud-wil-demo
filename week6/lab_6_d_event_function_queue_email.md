@@ -1,5 +1,7 @@
 # 📩 Lab 6-D: Event-Driven Notification System Using Azure Queue Trigger and ACS Email
 
+<img width="1536" height="619" alt="IMG" src="https://github.com/user-attachments/assets/dbcd7808-17a0-4dde-abcb-47da61d26c1c" />
+
 ---
 
 ## 🎯 Objectives
